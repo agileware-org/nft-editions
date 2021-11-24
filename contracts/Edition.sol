@@ -122,13 +122,13 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * This operation sets the sale price, thus allowing anyone to acquire a token from this edition at the sale price.
-     * Setting the sale price to 0 prevents public acquisition of the tokens which is then allowed only to permitted addresses.
+     * This operation sets the sale price, thus allowing anyone to acquire a token from this edition at the sale price via the purchase operation.
+     * Setting the sale price to 0 prevents purchase of the tokens which is then allowed only to permitted addresses.
      * 
-     * @param _salePrice if sale price is 0 sale is stopped, otherwise that amount of ETH is needed to start the sale.
+     * @param _wei if sale price is 0, no sale is allowed, otherwise the provided amount of WEI is needed to start the sale.
      */
-    function setSalePrice(uint256 _salePrice) external onlyOwner {
-        salePrice = _salePrice;
+    function setSalePrice(uint256 _wei) external onlyOwner {
+        salePrice = _wei;
         emit PriceChanged(salePrice);
     }
 
