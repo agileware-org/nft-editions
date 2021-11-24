@@ -48,7 +48,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     uint256 royaltyBPS;
     
     // Addresses allowed to mint edition
-    mapping(address => uint32) allowedMinters;
+    mapping(address => uint16) allowedMinters;
 
     // Price for sale
     uint256 public salePrice;
@@ -187,15 +187,16 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * Sets the approved minting status of the given address.
-     * This requires that msg.sender is the owner of the given edition id.
-     * If the ZeroAddress (address(0x0)) is set as a minter, anyone will be allowed to mint.
-     * This setup is similar to setApprovalForAll in the ERC721 spec.
+     * Allows the edition owner to set the amount of tokens (max 65535) an address is allowed to mint.
+     * 
+     * If the ZeroAddress (address(0x0)) is set as a minter with an allowance greater than 0, anyone will be allowed 
+     * to mint any amount of tokens, similarly to setApprovalForAll in the ERC721 spec.
+     * If the allowed amount is set to 0 then the address will NOT be allowed to mint.
      * 
      * @param minter address to set approved minting status for
-     * @param allowed uint32 how many tokens this address is allowed to mint
+     * @param allowed uint16 how many tokens this address is allowed to mint, 0 disables minting
      */
-    function setApprovedMinter(address minter, uint32 allowed) public onlyOwner {
+    function setApprovedMinter(address minter, uint16 allowed) public onlyOwner {
         allowedMinters[minter] = allowed;
     }
 
