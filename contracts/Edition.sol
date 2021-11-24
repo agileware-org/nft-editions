@@ -72,7 +72,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _contentUrl Content URL of the edition.
      * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH).
      * @param _editionSize Number of editions that can be minted in total. If 0, unlimited editions can be minted.
-     * @dev 
+     * @param _royaltyBPS Royalties paid to the creator upon token selling
      */
     function initialize(
         address _owner,
@@ -81,7 +81,8 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize
+        uint256 _editionSize,
+        uint256 _royaltyBPS
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
@@ -91,6 +92,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         editionSize = _editionSize;
+        royaltyBPS = _royaltyBPS;
         // Set edition id start to be 1 not 0
         atEditionId.increment();
     }
@@ -266,8 +268,8 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
     
      /**
-      * Get royalty information for token
-      * @param _salePrice Sale price for the token
+      * Gets royalty information for token
+      * @param _salePrice the sale price for this token
       */
     function royaltyInfo(uint256, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
         if (owner() == address(0x0)) {
