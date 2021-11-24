@@ -143,7 +143,14 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * Internal: checks if the msg.sender is allowed to mint the given edition id.
      */
     function _isAllowedToMint() internal view returns (bool) {
-        return (owner() == msg.sender) || (allowedMinters[address(0x0)] > 0) || (allowedMinters[msg.sender] > 0);
+        return (owner() == msg.sender) || _isPublicAllowed() || (allowedMinters[msg.sender] > 0);
+    }
+    
+    /**
+     * Internal: checks if the ZeroAddress is allowed to mint the given edition id.
+     */
+    function _isPublicAllowed() internal view returns (bool) {
+        return (allowedMinters[address(0x0)] > 0);
     }
 
     /**
@@ -154,7 +161,9 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         require(_isAllowedToMint(), "Needs to be an allowed minter");
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
-        allowedMinters[msg.sender] = --allowedMinters[msg.sender];
+        if (owner() != msg.sender && !_isPublicAllowed()) {
+            allowedMinters[msg.sender] = --allowedMinters[msg.sender];
+        }
         return _mintEditions(toMint);
     }
 
