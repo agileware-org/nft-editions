@@ -72,7 +72,6 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _contentUrl Content URL of the edition.
      * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH).
      * @param _editionSize Number of editions that can be minted in total. If 0, unlimited editions can be minted.
-     * @param _salePrice the sale price of the tokens: set it to 0 to disable sales.
      * @dev 
      */
     function initialize(
@@ -82,9 +81,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize,
-        uint256 _salePrice,
-        uint256 _royaltyBPS
+        uint256 _editionSize
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
@@ -94,8 +91,6 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         editionSize = _editionSize;
-        salePrice = _salePrice;
-        royaltyBPS = _royaltyBPS;
         // Set edition id start to be 1 not 0
         atEditionId.increment();
     }

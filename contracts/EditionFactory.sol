@@ -33,7 +33,8 @@ contract EditionFactory {
 
     /**
      * Creates a new edition contract as a factory with a deterministic address, returning the address of the newly created Edition contract.
-     * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which must refer to a content having the same hash
+     * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which must refer to a content having the same hash.
+     * Returns the id of the created editions contract.
      * 
      * @param _name Name of the edition contract
      * @param _symbol Symbol of the edition contract
@@ -41,8 +42,6 @@ contract EditionFactory {
      * @param _contentUrl Metadata: Image url (semi-required) of the edition entry
      * @param _contentHash Metadata: SHA-256 hash of the Image of the edition entry (if not image, can be 0x0)
      * @param _editionSize Total size of the edition (number of possible editions)
-     * @param _salePrice sale price, set to 0 for disabling sales
-     * @param _royaltyBPS royalties in BPS
      */
     function createEdition(
         string memory _name,
@@ -50,17 +49,13 @@ contract EditionFactory {
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize,
-        uint256 _salePrice,
-        uint256 _royaltyBPS
+        uint256 _editionSize
     ) external returns (uint256) {
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
         
-        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _editionSize, _salePrice, _royaltyBPS);
+        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _editionSize);
         emit CreatedEdition(newId, msg.sender, _editionSize, newContract);
-        // Returns the ID of the recently created minting contract
-        // Also increments for the next contract creation call
         atContract.increment();
         return newId;
     }
