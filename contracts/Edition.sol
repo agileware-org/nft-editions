@@ -237,10 +237,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * Get URI and has for edition NFT
-     * @return imageUrl, imageHash
+     * Get URI and hash for edition NFT
+     * @return contentUrl, contentHash
      */
-    function getURIs() public view returns (string memory, bytes32) {
+    function getURI() public view returns (string memory, bytes32) {
         return (contentUrl, contentHash);
     }
 
@@ -255,6 +255,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
 
         return metadata.createMetadataEdition(name(), description, contentUrl, tokenId, editionSize);
     }
+    
      /**
       * Get royalty information for token
       * @param _salePrice Sale price for the token
