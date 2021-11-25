@@ -7,7 +7,9 @@
  */
 pragma solidity 0.8.6;
 
-interface IRoyalties {
+import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
+
+interface IRoyalties is IERC2981 {
     struct RoyaltyInfo {
         address recipient;
         uint24 bps;
@@ -15,9 +17,7 @@ interface IRoyalties {
         address alt;
     }
     
-    function royaltyInfo(uint256 _value) external view returns (address receiver, uint256 royaltyAmount);
     function initialize(address receiver, uint256 bps, bytes32[] memory data) external;
-    function paid(address from, address to, uint256 value) external;
 
     /**
      * @notice Require that the token has had a content hash set

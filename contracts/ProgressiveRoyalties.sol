@@ -7,14 +7,15 @@
  */
 pragma solidity 0.8.6;
 
+import {IERC2981, IERC165} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import {IRoyalties} from "./IRoyalties.sol";
+import {ITransferAwareRoyalties} from "./ITransferAwareRoyalties.sol";
 
 /**
  * Progressively reducing royalties, starting at a value which gets reduced after each sale.
  */
-contract ProgressiveRoyalties is IRoyalties, Initializable {
+contract ProgressiveRoyalties is ITransferAwareRoyalties, Initializable {
     RoyaltyInfo private info;
     
     /**
@@ -32,12 +33,12 @@ contract ProgressiveRoyalties is IRoyalties, Initializable {
         require(info.params[1] < 10000, "Invalid reduction");
     }
     
-    function royaltyInfo(uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
+    function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         return (info.recipient, (_value * info.bps) / 10000);
     }
     
     
-    function paid(address, address, uint256) external override {
+    function transferred(address, address, uint256) external override {
         uint24 newBps = info.bps;
         if (info.params[0] > 0) {
             newBps = uint24((newBps * (100 - info.params[0]) / 100));
@@ -48,5 +49,9 @@ contract ProgressiveRoyalties is IRoyalties, Initializable {
             newBps = 0;
         }
         info.bps = newBps;
+    }
+    
+    function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
+        return type(IERC2981).interfaceId == interfaceId;
     }
 }

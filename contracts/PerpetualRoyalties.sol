@@ -8,7 +8,7 @@
 pragma solidity 0.8.6;
 
 
-import {IERC2981Upgradeable, IERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
+import {IERC2981, IERC165} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IRoyalties} from "./IRoyalties.sol";
 
@@ -27,9 +27,11 @@ contract PerpetualRoyalties is IRoyalties, Initializable {
         info.bps = uint16(_bps);
     }
     
-    function royaltyInfo(uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
+    function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         return (info.recipient, (_value * info.bps) / 10000);
     }
     
-    function paid(address, address, uint256) external view override {}
+    function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
+        return type(IERC2981).interfaceId == interfaceId;
+    }
 }

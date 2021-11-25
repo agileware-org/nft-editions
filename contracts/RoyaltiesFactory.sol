@@ -25,9 +25,8 @@ contract RoyaltiesFactory is OwnableUpgradeable {
     
     // Counter for last royalties implementation contract added
     CountersUpgradeable.Counter private atImplementation;
-    
-    // Addresses of 
-    mapping(uint256 => address) implementations;
+
+    mapping (uint256 => address) implementations;
     
     constructor() {
         __Ownable_init();
@@ -42,14 +41,27 @@ contract RoyaltiesFactory is OwnableUpgradeable {
         return newId;
     }
     
-    function createRoyalties(uint256 _typeId, address _recipient, uint32 _bps, bytes32[] memory _data) public returns (uint256) {
+    /**
+     * Gets an edition given the created ID
+     * 
+     * @param _typeId id of edition to get contract for
+     * @return IRoyalties template implementation
+     */
+    function getRoyaltiesTemplateAtId(uint256 _typeId) external view returns (IRoyalties) {
+        require(_typeId < atImplementation.current(), "Invalid typeId");
+        return IRoyalties(implementations[_typeId]);
+    }
+    
+    function createRoyalties(uint256 _typeId, address _recipient, uint32 _bps, bytes32[] memory _data) public returns (address) {
+        require(_typeId < atImplementation.current(), "Invalid typeId");
+        require(_recipient != address(0x0), "Invalid recipient");
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementations[_typeId], bytes32(abi.encodePacked(newId)));
         
         IRoyalties(newContract).initialize(_recipient, _bps, _data);
         emit CreatedRoyalties(newId, msg.sender, newContract);
         atContract.increment();
-        return newId;
+        return newContract;
     }
     
     /**
