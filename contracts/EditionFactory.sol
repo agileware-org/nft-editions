@@ -42,6 +42,7 @@ contract EditionFactory {
      * @param _contentUrl Metadata: Image url (semi-required) of the edition entry
      * @param _contentHash Metadata: SHA-256 hash of the Image of the edition entry (if not image, can be 0x0)
      * @param _editionSize Total size of the edition (number of possible editions)
+     * @param _royalties Contract handling token royalties as per ERC2981 (can be 0x0 for no royalties)
      */
     function createEdition(
         string memory _name,
@@ -50,12 +51,12 @@ contract EditionFactory {
         string memory _contentUrl,
         bytes32 _contentHash,
         uint256 _editionSize,
-        uint256 _royaltyBPS
+        address _royalties
     ) external returns (uint256) {
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
         
-        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _editionSize, _royaltyBPS);
+        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _editionSize, _royalties);
         emit CreatedEdition(newId, msg.sender, _editionSize, newContract);
         atContract.increment();
         return newId;
