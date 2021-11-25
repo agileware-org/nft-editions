@@ -35,15 +35,15 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     string private contentUrl;
     // hash for the associated content
     bytes32 private contentHash;
+    
+    // Royalties ERC2981
+    uint16 royaltyBPS;
 
     // Total size of edition that can be minted
-    uint256 public editionSize;
+    uint64 public editionSize;
     
     // Current token id minted
     CountersUpgradeable.Counter private atEditionId;
-    
-    // Royalties ERC2981
-    uint256 royaltyBPS;
     
     // Addresses allowed to mint edition
     mapping(address => uint16) allowedMinters;
@@ -79,9 +79,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize,
-        uint256 _royaltyBPS
+        uint64 _editionSize,
+        uint16 _royaltyBPS
     ) public initializer {
+        require(_royaltyBPS < 10_000, "Too high royalties");
         __ERC721_init(_name, _symbol);
         __Ownable_init();
         // Set ownership to original sender of contract call

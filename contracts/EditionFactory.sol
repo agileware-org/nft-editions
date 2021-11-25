@@ -49,8 +49,8 @@ contract EditionFactory {
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize,
-        uint256 _royaltyBPS
+        uint64 _editionSize,
+        uint16 _royaltyBPS
     ) external returns (uint256) {
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
