@@ -16,6 +16,7 @@ import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Addr
 
 import {EditionMetadata} from "./EditionMetadata.sol";
 import {IEdition} from "./IEdition.sol";
+import {IRoyalties} from "./IRoyalties.sol";
 
 /**
  * This contract allows dynamic NFT minting.
@@ -43,7 +44,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     CountersUpgradeable.Counter private atEditionId;
     
     // Royalties ERC2981
-    uint256 royaltyBPS;
+    address private royalties;
     
     // Addresses allowed to mint edition
     mapping(address => uint16) allowedMinters;
@@ -70,7 +71,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _contentUrl Content URL of the edition.
      * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH).
      * @param _editionSize Number of editions that can be minted in total. If 0, unlimited editions can be minted.
-     * @param _royaltyBPS Royalties paid to the creator upon token selling
+     * @param _royalties Royalties paid to the creator upon token selling
      */
     function initialize(
         address _owner,
@@ -80,8 +81,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _contentUrl,
         bytes32 _contentHash,
         uint256 _editionSize,
-        uint256 _royaltyBPS
+        address _royalties
     ) public initializer {
+        require(address(0x0) == _royalties || AddressUpgradeable.isContract(_royalties), "Address not a contract");
+        require(IRoyalties(_royalties).is)
         __ERC721_init(_name, _symbol);
         __Ownable_init();
         // Set ownership to original sender of contract call
@@ -90,7 +93,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         editionSize = _editionSize;
-        royaltyBPS = _royaltyBPS;
+        royalties = _royalties;
         // Set edition id start to be 1 not 0
         atEditionId.increment();
     }
@@ -274,7 +277,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         if (owner() == address(0x0)) {
             return (owner(), 0);
         }
-        return (owner(), (_salePrice * royaltyBPS) / 10_000);
+        return IRoyalties(royalties).royaltyInfo(_salePrice);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
