@@ -36,15 +36,15 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     string private contentUrl;
     // hash for the associated content
     bytes32 private contentHash;
+    
+    // Royalties ERC2981
+    address royalties;
 
     // Total size of edition that can be minted
-    uint256 public editionSize;
+    uint64 public editionSize;
     
     // Current token id minted
     CountersUpgradeable.Counter private atEditionId;
-    
-    // Royalties ERC2981
-    address private royalties;
     
     // Addresses allowed to mint edition
     mapping(address => uint16) allowedMinters;
@@ -80,7 +80,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize,
+        uint64 _editionSize,
         address _royalties
     ) public initializer {
         require(address(0x0) == _royalties || AddressUpgradeable.isContract(_royalties), "Address not a contract");
@@ -272,11 +272,11 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
       * ERC2981 - Gets royalty information for token
       * @param _salePrice the sale price for this token
       */
-    function royaltyInfo(uint256, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
+    function royaltyInfo(uint256 _tokenId, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
         if (owner() == address(0x0) || royalties == address(0x0)) {
             return (address(0x0), 0);
         }
-        return IRoyalties(royalties).royaltyInfo(_salePrice);
+        return IRoyalties(royalties).royaltyInfo(_tokenId, _salePrice);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {

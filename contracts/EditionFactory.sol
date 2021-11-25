@@ -50,7 +50,7 @@ contract EditionFactory {
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint256 _editionSize,
+        uint64 _editionSize,
         address _royalties
     ) external returns (uint256) {
         uint256 newId = atContract.current();
