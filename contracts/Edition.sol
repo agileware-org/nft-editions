@@ -84,7 +84,6 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         address _royalties
     ) public initializer {
         require(address(0x0) == _royalties || AddressUpgradeable.isContract(_royalties), "Address not a contract");
-        require(IRoyalties(_royalties).is)
         __ERC721_init(_name, _symbol);
         __Ownable_init();
         // Set ownership to original sender of contract call
