@@ -273,8 +273,8 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
       * @param _salePrice the sale price for this token
       */
     function royaltyInfo(uint256, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
-        if (owner() == address(0x0)) {
-            return (owner(), 0);
+        if (owner() == address(0x0) || royalties == address(0x0)) {
+            return (address(0x0), 0);
         }
         return IRoyalties(royalties).royaltyInfo(_salePrice);
     }
