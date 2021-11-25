@@ -28,15 +28,13 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
 
-    // metadata
+    // Token description
     string private description;
 
-    // The token content URL
+    // Token content URL
     string private contentUrl;
-    // Hash for the associated content
+    // hash for the associated content
     bytes32 private contentHash;
-    // The media type of the content
-    bytes32 private contentType;
 
     // Total size of edition that can be minted
     uint256 public editionSize;
@@ -44,7 +42,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     // Current token id minted
     CountersUpgradeable.Counter private atEditionId;
     
-    // Royalty amount in bps
+    // Royalties ERC2981
     uint256 royaltyBPS;
     
     // Addresses allowed to mint edition
@@ -269,7 +267,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
     
      /**
-      * Gets royalty information for token
+      * ERC2981 - Gets royalty information for token
       * @param _salePrice the sale price for this token
       */
     function royaltyInfo(uint256, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
@@ -280,8 +278,6 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
-        return 
-            type(IERC2981Upgradeable).interfaceId == interfaceId ||
-            ERC721Upgradeable.supportsInterface(interfaceId);
+        return type(IERC2981Upgradeable).interfaceId == interfaceId || ERC721Upgradeable.supportsInterface(interfaceId);
     }
 }

@@ -25,7 +25,7 @@ contract EditionFactory {
     /**
      * Initializes factory with address of implementation logic
      * 
-     * @param _implementation SingleEditionMintable logic implementation contract to clone
+     * @param _implementation Edition logic implementation contract to clone
      */
     constructor(address _implementation) {
         implementation = _implementation;
@@ -68,14 +68,7 @@ contract EditionFactory {
      * @return SingleEditionMintable Edition NFT contract
      */
     function getEditionAtId(uint256 editionId) external view returns (Edition) {
-        return
-            Edition(
-                ClonesUpgradeable.predictDeterministicAddress(
-                    implementation,
-                    bytes32(abi.encodePacked(editionId)),
-                    address(this)
-                )
-            );
+        return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(editionId)), address(this)));
     }
 
     /**
