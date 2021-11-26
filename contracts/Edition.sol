@@ -82,17 +82,17 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         uint64 _editionSize,
         uint16 _royaltyBPS
     ) public initializer {
-        require(_royaltyBPS < 10_000, "Too high royalties");
+        require(_royaltyBPS < 10_000, "Royalties: Too high");
         __ERC721_init(_name, _symbol);
         __Ownable_init();
-        // Set ownership to original sender of contract call
+        // Set ownership to original sender of edition creation call
         transferOwnership(_owner);
         description = _description;
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         editionSize = _editionSize;
         royaltyBPS = _royaltyBPS;
-        // Set edition id start to be 1 not 0
+        // Editions start id is 1
         atEditionId.increment();
     }
 
@@ -141,25 +141,25 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * Internal: checks if the msg.sender is allowed to mint the given edition id.
+     * Internal: checks if the msg.sender is allowed to mint.
      */
     function _isAllowedToMint() internal view returns (bool) {
         return (owner() == msg.sender) || _isPublicAllowed() || (allowedMinters[msg.sender] > 0);
     }
     
     /**
-     * Internal: checks if the ZeroAddress is allowed to mint the given edition id.
+     * Internal: checks if the ZeroAddress is allowed to mint.
      */
     function _isPublicAllowed() internal view returns (bool) {
         return (allowedMinters[address(0x0)] > 0);
     }
 
     /**
-     * This mints one edition for an allowed minter on the edition instance.
+     * If caller is listed as allowed minter, mints one edition for him.
      * 
      */
     function mintEdition() external override returns (uint256) {
-        require(_isAllowedToMint(), "Needs to be an allowed minter");
+        require(_isAllowedToMint(), "Minting not allowed");
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
         if (owner() != msg.sender && !_isPublicAllowed()) {
