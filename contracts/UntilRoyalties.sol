@@ -16,7 +16,7 @@ import {IRoyalties} from "./IRoyalties.sol";
  * Time limited royalties, pay a fixed percentage until specified block timestamp is reached.
  */
 contract UntilRoyalties is IRoyalties, Initializable {
-    RoyaltyInfo private info;
+    RoyaltyInfo public info;
     
     /**
      * @param _recipient Address of the royalties collector
@@ -30,6 +30,10 @@ contract UntilRoyalties is IRoyalties, Initializable {
         require(info.params[0] > block.timestamp, "Expires in the past");
     }
     
+    function label() public override pure returns (string memory) {
+        return "Until Timestamp 1.0";
+    }
+    
     function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         if (block.timestamp < info.params[0]) {
             return (info.recipient, (_value * info.bps) / 10000);
@@ -38,6 +42,6 @@ contract UntilRoyalties is IRoyalties, Initializable {
     }
     
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
-        return type(IERC2981).interfaceId == interfaceId;
+        return type(IERC2981).interfaceId == interfaceId || type(IRoyalties).interfaceId == interfaceId;
     }
 }

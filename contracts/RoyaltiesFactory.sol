@@ -27,6 +27,7 @@ contract RoyaltiesFactory is OwnableUpgradeable {
     CountersUpgradeable.Counter private atImplementation;
 
     mapping (uint256 => address) implementations;
+    mapping (address => address[]) contracts;
     
     constructor() {
         __Ownable_init();
@@ -59,15 +60,20 @@ contract RoyaltiesFactory is OwnableUpgradeable {
         address newContract = ClonesUpgradeable.cloneDeterministic(implementations[_typeId], bytes32(abi.encodePacked(newId)));
         
         IRoyalties(newContract).initialize(_recipient, _bps, _data);
+        contracts[_recipient].push(newContract);
         emit CreatedRoyalties(newId, msg.sender, newContract);
         atContract.increment();
         return newContract;
     }
+
+    function getRoyalties(address _recipient) external view returns (address[] memory) {
+        return contracts[_recipient];
+    }
     
     /**
-     * Emitted when a edition is created reserving the corresponding token IDs.
+     * Emitted when a royalty is created reserving the corresponding ID.
      * 
-     * @param royaltiesId the identifier of newly created royallties
+     * @param royaltiesId the identifier of newly created royalties
      * @param creator the address creating the royalties contract
      * @param contractAddress the address of the newly created royalties contract
      */

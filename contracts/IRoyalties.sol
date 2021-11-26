@@ -9,6 +9,8 @@ pragma solidity 0.8.6;
 
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 interface IRoyalties is IERC2981 {
     struct RoyaltyInfo {
         address recipient;
@@ -16,7 +18,8 @@ interface IRoyalties is IERC2981 {
         uint64[3] params;
         address alt;
     }
-    
+
+    function label() external returns (string memory);
     function initialize(address receiver, uint256 bps, bytes32[] memory data) external;
 
     /**

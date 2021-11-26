@@ -16,8 +16,8 @@ import {IRoyalties} from "./IRoyalties.sol";
  * Perpetual royalties, pay a fixed percentage indefinitely.
  */
 contract PerpetualRoyalties is IRoyalties, Initializable {
-    RoyaltyInfo private info;
-    
+    RoyaltyInfo public info;
+
     /**
      * @param _recipient Address of the royalties collector
      * @param _bps Royalties percentage in BPS (1/10000)
@@ -26,12 +26,16 @@ contract PerpetualRoyalties is IRoyalties, Initializable {
         info.recipient = _recipient;
         info.bps = uint16(_bps);
     }
+
+    function label() public override pure returns (string memory) {
+        return "Perpetual 1.0";
+    }
     
     function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         return (info.recipient, (_value * info.bps) / 10000);
     }
     
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
-        return type(IERC2981).interfaceId == interfaceId;
+        return type(IERC2981).interfaceId == interfaceId || type(IRoyalties).interfaceId == interfaceId;
     }
 }

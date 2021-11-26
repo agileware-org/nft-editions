@@ -15,7 +15,7 @@ import {IRoyalties} from "./IRoyalties.sol";
  * The colleector can establish a lower sale value limit, so that royalties are not collected if the NFT is sold for a value equal or less what specified.
  */
 contract LimitedRoyalties is IRoyalties, Initializable {
-    RoyaltyInfo private info;
+    RoyaltyInfo public info;
     
     uint256 minValue;
     
@@ -29,6 +29,10 @@ contract LimitedRoyalties is IRoyalties, Initializable {
         info.bps = uint16(_bps);
         minValue = uint256(_data[0]);
     }
+
+    function label() public override pure returns (string memory) {
+        return "Value Limited 1.0";
+    }
     
     function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         if (_value <= minValue) {
@@ -38,6 +42,6 @@ contract LimitedRoyalties is IRoyalties, Initializable {
     }
     
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
-        return type(IERC2981).interfaceId == interfaceId;
+        return type(IERC2981).interfaceId == interfaceId || type(IRoyalties).interfaceId == interfaceId;
     }
 }
