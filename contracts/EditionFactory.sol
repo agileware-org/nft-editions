@@ -16,16 +16,16 @@ import "./Edition.sol";
 contract EditionFactory {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    // Counter for current contract id upgraded
+    // Counter for current contract id
     CountersUpgradeable.Counter private atContract;
 
-    // Address for implementation of SingleEditionMintable to clone
+    // Address for implementation of Edition contract to clone
     address public implementation;
 
     /**
-     * Initializes factory with address of implementation logic
+     * Initializes the factory with the address of the implementation contract template
      * 
-     * @param _implementation Edition logic implementation contract to clone
+     * @param _implementation Edition implementation contract to clone
      */
     constructor(address _implementation) {
         implementation = _implementation;
@@ -44,7 +44,7 @@ contract EditionFactory {
      * @param _editionSize Total size of the edition (number of possible editions)
      */
     function createEdition(
-        string memory _name,
+string memory _name,
         string memory _symbol,
         string memory _description,
         string memory _contentUrl,
@@ -62,24 +62,22 @@ contract EditionFactory {
     }
 
     /**
-     * Gets an edition given the created ID
+     * Gets an edition given the unique identifier
      * 
      * @param editionId id of edition to get contract for
-     * @return SingleEditionMintable Edition NFT contract
+     * @return the Edition NFT contract
      */
     function getEditionAtId(uint256 editionId) external view returns (Edition) {
         return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(editionId)), address(this)));
     }
 
     /**
-     * Emitted when a edition is created reserving the corresponding token IDs.
+     * Emitted when an edition is created reserving the corresponding token IDs.
      * 
      * @param editionId the identifier of newly created edition
+     * @param creator the edition's owner
+     * @param editionSize the number of NFTs this edition consists of
+     * @param contractAddress the address of the contract represneting the edition
      */
-    event CreatedEdition(
-        uint256 indexed editionId,
-        address indexed creator,
-        uint256 editionSize,
-        address editionContractAddress
-    );
+    event CreatedEdition(uint256 indexed editionId, address indexed creator, uint256 editionSize, address contractAddress);
 }
