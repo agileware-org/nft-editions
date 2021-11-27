@@ -28,49 +28,50 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
 
-    // Token description
+    // token description
     string private description;
 
-    // Token content URL
+    // token content URL
     string private contentUrl;
     // hash for the associated content
     bytes32 private contentHash;
+    // type of content
+    uint8 contentType;
     
-    // Royalties ERC2981
+    // royalties ERC2981
     uint16 royaltyBPS;
 
-    // Total size of edition that can be minted
+    // total size of edition that can be minted
     uint64 public editionSize;
     
-    // Current token id minted
+    // next token id
     CountersUpgradeable.Counter private atEditionId;
     
-    // Addresses allowed to mint edition
-    mapping(address => uint16) allowedMinters;
-
-    // Price for sale
-    uint256 public salePrice;
-
     // NFT rendering logic
     EditionMetadata private immutable metadata;
 
-    // Global constructor for factory
+    // addresses allowed to mint edition
+    mapping(address => uint16) allowedMinters;
+
+    // price for sale
+    uint256 public salePrice;
+
     constructor(EditionMetadata _metadata) {
         metadata = _metadata;
     }
 
     /**
-     * Function to create a new edition. Can only be called by the allowed creator
-     * Sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later
+     * Creates a new edition and sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later.
      * 
-     * @param _owner User that owns and can mint the edition, gets royalty and sales payouts and can update the base url if needed.
-     * @param _name Name of edition, used in the title as "$NAME NUMBER/TOTAL"
-     * @param _symbol Symbol of the new token contract
-     * @param _description Description of edition, used in the description field of the NFT
-     * @param _contentUrl Content URL of the edition.
+     * @param _owner address of the edition creator: can authorize, mint, gets royalties and sales payouts, can update the content URL.
+     * @param _name name of edition, used in the title as "$name $tokenId/$editionSize"
+     * @param _symbol symbol of the new token contract
+     * @param _description description of edition, used in the description field of the NFT
+     * @param _contentUrl content URL of the edition.
      * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH).
-     * @param _editionSize Number of editions that can be minted in total. If 0, unlimited editions can be minted.
-     * @param _royaltyBPS Royalties paid to the creator upon token selling
+     * @param _contentType SHA256 of the given content in bytes32 format (0xHASH).
+     * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition.
+     * @param _royaltyBPS royalties paid to the creator upon token selling
      */
     function initialize(
         address _owner,
@@ -79,24 +80,22 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
+        uint8 _contentType,
         uint64 _editionSize,
         uint16 _royaltyBPS
     ) public initializer {
         require(_royaltyBPS < 10_000, "Royalties: Too high");
         __ERC721_init(_name, _symbol);
         __Ownable_init();
-        // Set ownership to original sender of edition creation call
+        // set ownership
         transferOwnership(_owner);
         description = _description;
         contentUrl = _contentUrl;
         contentHash = _contentHash;
-        if (_editionSize == 0) {
-            editionSize = type(uint64).max;
-        } else {
-            editionSize = _editionSize;
-        }
+        contentType = _contentType;
+        editionSize = _editionSize;
         royaltyBPS = _royaltyBPS;
-        // Editions start id is 1
+        // edition start id is 1
         atEditionId.increment();
     }
 
@@ -107,11 +106,6 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      function totalSupply() public view returns (uint256) {
         return atEditionId.current() - 1;
     }
-    
-    /**
-        Simple eth-based sales function
-        More complex sales functions can be implemented through ISingleEditionMintable interface
-     */
 
     /**
      * Basic ETH-based sales operation, performed at the given set price.
@@ -160,7 +154,6 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
 
     /**
      * If caller is listed as an allowed minter, mints one NFT for him.
-     * 
      */
     function mintEdition() external override returns (uint256) {
         require(_isAllowedToMint(), "Minting not allowed");
@@ -173,10 +166,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * Mints multiple editions, one for each of the given list of addresses.
+     * Mints multiple tokens, one for each of the given list of addresses.
      * Only the edition owner can use this operation and it is intended fo partial giveaways.
      * 
-     * @param recipients list of addresses to send the newly minted editions to
+     * @param recipients list of addresses to send the newly minted tokens to
      */
     function mintEditions(address[] memory recipients) external onlyOwner override returns (uint256) {
         return _mintEditions(recipients);
@@ -212,7 +205,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /** 
-     * Returns the number of editions allowed to be minted (uint64 when open edition)
+     * Returns the number of tokens still available for minting (uint64 when open edition)
      */
     function numberCanMint() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
@@ -234,9 +227,9 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * Called by the public edition minting functions.
      */
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
-        uint256 startAt = atEditionId.current();
-        uint256 endAt = startAt + recipients.length - 1;
-        require(endAt <= editionSize, "Sold out");
+        uint64 startAt = uint64(atEditionId.current());
+        uint64 endAt = uint64(startAt + recipients.length - 1);
+        require(editionSize == 0 || endAt <= editionSize, "Sold out");
         while (atEditionId.current() <= endAt) {
             _mint(recipients[atEditionId.current() - startAt], atEditionId.current());
             atEditionId.increment();
@@ -260,7 +253,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "No token");
-        return metadata.createMetadataEdition(name(), description, contentUrl, tokenId, editionSize);
+        return metadata.createTokenURI(name(), description, contentUrl, tokenId, editionSize);
     }
     
      /**

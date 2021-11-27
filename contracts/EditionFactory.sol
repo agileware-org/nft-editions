@@ -44,18 +44,18 @@ contract EditionFactory {
      * @param _editionSize Total size of the edition (number of possible editions)
      */
     function createEdition(
-string memory _name,
+        string memory _name,
         string memory _symbol,
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
+        uint8 _contentType,
         uint64 _editionSize,
         uint16 _royaltyBPS
     ) external returns (uint256) {
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
-        
-        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _editionSize, _royaltyBPS);
+        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS);
         emit CreatedEdition(newId, msg.sender, _editionSize, newContract);
         atContract.increment();
         return newId;
