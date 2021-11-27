@@ -8,29 +8,13 @@
 
 pragma solidity 0.8.6;
 
-import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-import {Base64} from "base64-sol/base64.sol";
-import {IEditionMetadata} from "./IEditionMetadata.sol";
+
+import {MetadataHelper} from "./MetadataHelper.sol";
 
 /**
  * Shared NFT logic for rendering metadata associated with editions
- * @dev Can safely be used for generic base64Encode and numberToString functions
  */
-contract EditionMetadata is IEditionMetadata {
-    /**
-     * @param unencoded bytes to base64-encode
-     */
-    function base64Encode(bytes memory unencoded) public pure override returns (string memory) {
-        return Base64.encode(unencoded);
-    }
-
-    /**
-     * Proxy to openzeppelin's toString function
-     * @param value number to return as a string
-     */
-    function numberToString(uint256 value) public pure override returns (string memory) {
-        return StringsUpgradeable.toString(value);
-    }
+contract EditionMetadata is MetadataHelper {
 
     /**
      * Generates edition metadata from storage information as base64-json blob
@@ -42,25 +26,10 @@ contract EditionMetadata is IEditionMetadata {
      * @param tokenOfEdition Token ID for specific token
      * @param editionSize Size of entire edition to show
      */
-    function createMetadataEdition(
-        string memory name,
-        string memory description,
-        string memory contentUrl,
-        uint256 tokenOfEdition,
-        uint256 editionSize
-    ) external pure returns (string memory) {
-        string memory _tokenMediaData = tokenMediaData(
-            contentUrl,
-            tokenOfEdition
-        );
-        bytes memory json = createMetadataJSON(
-            name,
-            description,
-            _tokenMediaData,
-            tokenOfEdition,
-            editionSize
-        );
-        return encodeMetadataJSON(json);
+    function createTokenURI(string memory name, string memory description, string memory contentUrl, uint256 tokenOfEdition, uint256 editionSize) external pure returns (string memory) {
+        string memory _tokenMediaData = tokenMediaData(contentUrl, tokenOfEdition);
+        bytes memory json = createMetadata(name, description, _tokenMediaData, tokenOfEdition, editionSize);
+        return encodeMetadata(json);
     }
 
     /** 
@@ -72,13 +41,7 @@ contract EditionMetadata is IEditionMetadata {
      * @param tokenOfEdition Token ID for specific token
      * @param editionSize Size of entire edition to show
     */
-    function createMetadataJSON(
-        string memory name,
-        string memory description,
-        string memory mediaData,
-        uint256 tokenOfEdition,
-        uint256 editionSize
-    ) public pure returns (bytes memory) {
+    function createMetadata(string memory name, string memory description, string memory mediaData, uint256 tokenOfEdition, uint256 editionSize) public pure returns (bytes memory) {
         bytes memory editionSizeText;
         if (editionSize > 0) {
             editionSizeText = abi.encodePacked("/", numberToString(editionSize));
@@ -88,15 +51,6 @@ contract EditionMetadata is IEditionMetadata {
                 mediaData,
                 'properties": {"number": ', numberToString(tokenOfEdition), ', "name": "', name, '"}}'
             );
-    }
-
-    /**
-     * Encodes the argument json bytes into base64-data uri format
-     * 
-     * @param json raw json to base64 and turn into a data-uri
-     */
-    function encodeMetadataJSON(bytes memory json) public pure override returns (string memory) {
-        return string(abi.encodePacked("data:application/json;base64,", base64Encode(json)));
     }
 
     /** 
