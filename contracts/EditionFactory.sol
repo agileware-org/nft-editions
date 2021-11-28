@@ -24,7 +24,7 @@ contract EditionFactory is OwnableUpgradeable {
     address public implementation;
 
     // Store for hash codes of edition contents: used to prevent re-issuing of the same content
-    //mapping(bytes32 => bool) private editionHashes;
+    mapping(bytes32 => bool) private editionHashes;
 
     /**
      * Initializes the factory with the address of the implementation contract template
@@ -58,7 +58,7 @@ contract EditionFactory is OwnableUpgradeable {
         uint16 _royaltyBPS,
         address payable _payee
     ) external returns (uint256) {
-        //require(!editionHashes[_contentHash], "Edition: duplicated content!");
+        require(!editionHashes[_contentHash], "Edition: duplicated content!");
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
         Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS, _payee);
