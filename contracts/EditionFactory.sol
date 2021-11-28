@@ -9,16 +9,16 @@
 pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
-import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./Edition.sol";
 
-contract EditionFactory is OwnableUpgradeable {
-    using CountersUpgradeable for CountersUpgradeable.Counter;
+contract EditionFactory is Ownable {
+    using Counters for Counters.Counter;
 
     // Counter for current contract id
-    CountersUpgradeable.Counter private counter;
+    Counters.Counter private counter;
 
     // Address for implementation of Edition contract to clone
     address private implementation;
@@ -46,6 +46,8 @@ contract EditionFactory is OwnableUpgradeable {
      * @param _contentUrl Metadata: Image url (semi-required) of the edition entry
      * @param _contentHash Metadata: SHA-256 hash of the Image of the edition entry (if not image, can be 0x0)
      * @param _editionSize Total size of the edition (number of possible editions)
+     * @param _royaltyBPS royalties paid to the creator upon token selling
+     * @param _payee address receiving the contract balance upon withdrawal
      */
     function createEdition(
         string memory _name,
