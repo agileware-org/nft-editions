@@ -41,14 +41,14 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     // royalties ERC2981
     uint16 royaltyBPS;
 
-    // total size of edition that can be minted
+    // total size of tokens this edition can generate
     uint64 public editionSize;
     
     // address receiving the withdraw payment
     address payable private payee;
 
-    // next token id
-    CountersUpgradeable.Counter private atEditionId;
+    // token id counter
+    CountersUpgradeable.Counter private counter;
     
     // NFT rendering logic
     EditionMetadata private immutable metadata;
@@ -70,11 +70,12 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _name name of edition, used in the title as "$name $tokenId/$editionSize"
      * @param _symbol symbol of the new token contract
      * @param _description description of edition, used in the description field of the NFT
-     * @param _contentUrl content URL of the edition.
-     * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH).
-     * @param _contentType SHA256 of the given content in bytes32 format (0xHASH).
-     * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition.
+     * @param _contentUrl content URL of the edition
+     * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH)
+     * @param _contentType type of content [0=image, 1=animation/video/audio]
+     * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition
      * @param _royaltyBPS royalties paid to the creator upon token selling
+     * @param _payee address receiving the contract balance upon withdrawal
      */
     function initialize(
         address _owner,
@@ -86,7 +87,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         uint8 _contentType,
         uint64 _editionSize,
         uint16 _royaltyBPS,
-        address _payee
+        address payable _payee
     ) public initializer {
         require(_royaltyBPS < 10_000, "Royalties: Too high");
         __ERC721_init(_name, _symbol);
@@ -99,9 +100,13 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentType = _contentType;
         editionSize = _editionSize;
         royaltyBPS = _royaltyBPS;
-        payee = payable(_payee);
+        if (_payee == address(0x0)) {
+            payee = payable(_owner);
+        } else {
+            payee = _payee;
+        }
         // edition start id is 1
-        atEditionId.increment();
+        counter.increment();
     }
 
 
@@ -109,7 +114,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * Returns the number of tokens minted within this edition 
      */
      function totalSupply() public view returns (uint256) {
-        return atEditionId.current() - 1;
+        return counter.current() - 1;
     }
 
     /**
@@ -214,7 +219,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      */
     function numberCanMint() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
-        return editionSize + 1 - atEditionId.current();
+        return editionSize + 1 - counter.current();
     }
 
     /**
@@ -232,14 +237,14 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * Called by the public edition minting functions.
      */
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
-        uint64 startAt = uint64(atEditionId.current());
+        uint64 startAt = uint64(counter.current());
         uint64 endAt = uint64(startAt + recipients.length - 1);
         require(editionSize == 0 || endAt <= editionSize, "Sold out");
-        while (atEditionId.current() <= endAt) {
-            _mint(recipients[atEditionId.current() - startAt], atEditionId.current());
-            atEditionId.increment();
+        while (counter.current() <= endAt) {
+            _mint(recipients[counter.current() - startAt], counter.current());
+            counter.increment();
         }
-        return atEditionId.current();
+        return counter.current();
     }
 
     /**
