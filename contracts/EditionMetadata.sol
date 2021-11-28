@@ -23,11 +23,12 @@ contract EditionMetadata is MetadataHelper {
      * @param name Name of NFT in metadata
      * @param description Description of NFT in metadata
      * @param contentUrl URL of image to render for edition
+     * @param contentType index of the content type to render for edition
      * @param tokenOfEdition Token ID for specific token
      * @param editionSize Size of entire edition to show
      */
-    function createTokenURI(string memory name, string memory description, string memory contentUrl, uint256 tokenOfEdition, uint256 editionSize) external pure returns (string memory) {
-        string memory _tokenMediaData = tokenMediaData(contentUrl, tokenOfEdition);
+    function createTokenURI(string memory name, string memory description, string memory contentUrl, uint8 contentType, uint256 tokenOfEdition, uint256 editionSize) external pure returns (string memory) {
+        string memory _tokenMediaData = tokenMediaData(contentUrl, contentType, tokenOfEdition);
         bytes memory json = createMetadata(name, description, _tokenMediaData, tokenOfEdition, editionSize);
         return encodeMetadata(json);
     }
@@ -58,12 +59,14 @@ contract EditionMetadata is MetadataHelper {
      * Combines the media data and metadata
      * 
      * @param contentUrl URL of image to render for edition
+     * @param contentType index of the content type to render for edition
      * @param tokenOfEdition token identifier
      */
-    function tokenMediaData(string memory contentUrl, uint256 tokenOfEdition) public pure returns (string memory) {
-        bool hasContent = bytes(contentUrl).length > 0;
-        if (hasContent) {
-            return string(abi.encodePacked('content": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
+    function tokenMediaData(string memory contentUrl, uint8 contentType, uint256 tokenOfEdition) public pure returns (string memory) {
+        if (contentType == 0) {
+            return string(abi.encodePacked('image": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
+        } else if (contentType == 1) {
+            return string(abi.encodePacked('animation_url": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
         }
         return "";
     }
