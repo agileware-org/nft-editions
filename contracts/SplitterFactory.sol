@@ -10,7 +10,6 @@ pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
-import {PaymentSplitterUpgradeable} from "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
 
 import "./ISplitter.sol";
 
