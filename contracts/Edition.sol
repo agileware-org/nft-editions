@@ -38,8 +38,8 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     // type of content
     uint8 contentType;
     
-    // royalties ERC2981
-    uint16 royaltyBPS;
+    // royalties ERC2981 in bps
+    uint16 royalties;
 
     // total size of tokens this edition can generate
     uint64 public editionSize;
@@ -74,7 +74,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH)
      * @param _contentType type of content [0=image, 1=animation/video/audio]
      * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition
-     * @param _royaltyBPS royalties paid to the creator upon token selling
+     * @param _royalties royalties paid to the creator upon token selling
      * @param _payee address receiving the contract balance upon withdrawal
      */
     function initialize(
@@ -86,10 +86,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         bytes32 _contentHash,
         uint8 _contentType,
         uint64 _editionSize,
-        uint16 _royaltyBPS,
+        uint16 _royalties,
         address payable _payee
     ) public initializer {
-        require(_royaltyBPS < 10_000, "Royalties: Too high");
+        require(_royalties < 10_000, "Royalties: too high");
         __ERC721_init(_name, _symbol);
         __Ownable_init();
         // set ownership
@@ -99,7 +99,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentHash = _contentHash;
         contentType = _contentType;
         editionSize = _editionSize;
-        royaltyBPS = _royaltyBPS;
+        royalties = _royalties;
         if (_payee == address(0x0)) {
             payee = payable(_owner);
         } else {
@@ -268,13 +268,13 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     
      /**
       * ERC2981 - Gets royalty information for token
-      * @param _salePrice the sale price for this token
+      * @param _value the sale price for this token
       */
-    function royaltyInfo(uint256, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
+    function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         if (owner() == address(0x0)) {
             return (owner(), 0);
         }
-        return (owner(), (_salePrice * royaltyBPS) / 10_000);
+        return (owner(), (_value * royalties) / 10_000);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
