@@ -18,10 +18,10 @@ contract EditionFactory is OwnableUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
-    CountersUpgradeable.Counter private atContract;
+    CountersUpgradeable.Counter private counter;
 
     // Address for implementation of Edition contract to clone
-    address public implementation;
+    address private implementation;
 
     // Store for hash codes of edition contents: used to prevent re-issuing of the same content
     mapping(bytes32 => bool) private editionHashes;
@@ -57,33 +57,44 @@ contract EditionFactory is OwnableUpgradeable {
         uint64 _editionSize,
         uint16 _royaltyBPS,
         address payable _payee
-    ) external returns (uint256) {
+    ) external returns (address) {
         require(!editionHashes[_contentHash], "Edition: duplicated content!");
-        uint256 newId = atContract.current();
-        address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
-        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS, _payee);
-        emit CreatedEdition(newId, msg.sender, _payee, _editionSize, newContract);
-        atContract.increment();
-        return newId;
+        editionHashes[_contentHash] = true;
+        uint256 id = counter.current();
+        address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
+        Edition(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS, _payee);
+        emit CreatedEdition(id, msg.sender, _payee, _editionSize, instance);
+        counter.increment();
+        return instance;
     }
 
     /**
-     * Gets an edition given the unique identifier
+     * Gets an edition given the unique identifier. Editions ids are zero-based.
      * 
-     * @param editionId id of edition to get contract for
+     * @param index zero-based index of edition to get contract for
      * @return the Edition NFT contract
      */
-    function getEditionAtId(uint256 editionId) external view returns (Edition) {
-        return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(editionId)), address(this)));
+    function getEditionAtIndex(uint256 index) external view returns (Edition) {
+        require(index < counter.current(), "Invalid index!");
+        return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this)));
+    }
+
+    /**
+     * Returns the number of editions created so far through this factory
+     * 
+     * @return the number of editions created so far through this factory
+     */
+     function getEditionsSize() external view returns (uint256) {
+        return counter.current();
     }
 
     /**
      * Emitted when an edition is created reserving the corresponding token IDs.
      * 
-     * @param editionId the identifier of newly created edition
+     * @param index the identifier of the newly created edition
      * @param creator the edition's owner
-     * @param editionSize the number of NFTs this edition consists of
-     * @param contractAddress the address of the contract represneting the edition
+     * @param size the number of NFTs this edition consists of
+     * @param contractAddress the address of the contract representing the edition
      */
-    event CreatedEdition(uint256 indexed editionId, address indexed creator, address indexed payee, uint256 editionSize, address contractAddress);
+    event CreatedEdition(uint256 indexed index, address indexed creator, address indexed payee, uint256 size, address contractAddress);
 }
