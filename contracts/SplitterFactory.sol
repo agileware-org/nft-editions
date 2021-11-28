@@ -54,6 +54,7 @@ contract SplitterFactory  {
      * @return the Splitterayment contract
      */
     function getSplitterAtIndex(uint256 index) external view returns (ISplitter) {
+        require(index < counter.current(), "Invalid index!");
         return ISplitter(payable(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this))));
     }
 
