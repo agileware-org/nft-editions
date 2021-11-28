@@ -10,10 +10,11 @@ pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./Edition.sol";
 
-contract EditionFactory {
+contract EditionFactory is OwnableUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
@@ -21,6 +22,9 @@ contract EditionFactory {
 
     // Address for implementation of Edition contract to clone
     address public implementation;
+
+    // Store for hash codes of edition contents: used to prevent re-issuing of the same content
+    //mapping(bytes32 => bool) private editionHashes;
 
     /**
      * Initializes the factory with the address of the implementation contract template
@@ -51,12 +55,14 @@ contract EditionFactory {
         bytes32 _contentHash,
         uint8 _contentType,
         uint64 _editionSize,
-        uint16 _royaltyBPS
+        uint16 _royaltyBPS,
+        address payable _payee
     ) external returns (uint256) {
+        //require(!editionHashes[_contentHash], "Edition: duplicated content!");
         uint256 newId = atContract.current();
         address newContract = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(newId)));
-        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS);
-        emit CreatedEdition(newId, msg.sender, _editionSize, newContract);
+        Edition(newContract).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS, _payee);
+        emit CreatedEdition(newId, msg.sender, _payee, _editionSize, newContract);
         atContract.increment();
         return newId;
     }
@@ -79,5 +85,5 @@ contract EditionFactory {
      * @param editionSize the number of NFTs this edition consists of
      * @param contractAddress the address of the contract represneting the edition
      */
-    event CreatedEdition(uint256 indexed editionId, address indexed creator, uint256 editionSize, address contractAddress);
+    event CreatedEdition(uint256 indexed editionId, address indexed creator, address indexed payee, uint256 editionSize, address contractAddress);
 }

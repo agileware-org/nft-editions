@@ -44,6 +44,9 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     // total size of edition that can be minted
     uint64 public editionSize;
     
+    // address receiving the withdraw payment
+    address payable private payee;
+
     // next token id
     CountersUpgradeable.Counter private atEditionId;
     
@@ -82,7 +85,8 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         bytes32 _contentHash,
         uint8 _contentType,
         uint64 _editionSize,
-        uint16 _royaltyBPS
+        uint16 _royaltyBPS,
+        address _payee
     ) public initializer {
         require(_royaltyBPS < 10_000, "Royalties: Too high");
         __ERC721_init(_name, _symbol);
@@ -95,6 +99,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentType = _contentType;
         editionSize = _editionSize;
         royaltyBPS = _royaltyBPS;
+        payee = payable(_payee);
         // edition start id is 1
         atEditionId.increment();
     }
@@ -132,10 +137,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * This operation transfers all ETHs from the edition to the edition owner, available solely for the contract owner.
+     * This operation transfers all ETHs from the edition to the payee.
      */
-    function withdraw() external onlyOwner {
-        AddressUpgradeable.sendValue(payable(owner()), address(this).balance);
+    function withdraw() external {
+        AddressUpgradeable.sendValue(payable(payee), address(this).balance);
     }
 
     /**
@@ -253,7 +258,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "No token");
-        return metadata.createTokenURI(name(), description, contentUrl, tokenId, editionSize);
+        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, editionSize);
     }
     
      /**
