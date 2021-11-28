@@ -18,14 +18,14 @@ contract PushSplitter is Initializable, ISplitter {
     mapping(address => uint16) private shares;
     
     function initialize(address[] memory _payees, uint256[] memory _shares) public override initializer {
-        require(_payees.length == _shares.length, "PushSplitter: payees and shares length mismatch");
-        require(_payees.length > 0, "PushSplitter: no payees");
+        require(_payees.length == _shares.length, "Splitter: inputs length mismatch");
+        require(_payees.length > 0, "Splitter: no payees");
         uint256 totalShares = 0;
         for (uint i = 0; i < _payees.length; i++) {
             shares[_payees[i]] = uint16(_shares[i]);
             totalShares += _shares[i];
         }
-        require(totalShares == 10_000, "Shares don't sum up to 100%");
+        require(totalShares == 10_000, "Shares don't sum up to 10000 pbs");
         payees = _payees;
     }
 
@@ -36,5 +36,4 @@ contract PushSplitter is Initializable, ISplitter {
             Address.sendValue(payable(payees[i]), amount);
         }
     }
-
 }

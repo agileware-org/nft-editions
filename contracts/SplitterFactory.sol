@@ -19,8 +19,8 @@ contract SplitterFactory  {
     // Counter for current contract id
     Counters.Counter private counter;
 
-    // Address for implementation of Splitter contract to clone
-    address public implementation;
+    // Address for implementation of ISplitter contract to clone
+    address immutable private implementation;
 
     /**
      * Initializes the factory with the address of the implementation contract template
@@ -35,18 +35,13 @@ contract SplitterFactory  {
      * Creates a new splitter contract as a factory with a deterministic address, returning the address of the newly created splitter contract.
      * Returns the id of the created splitter contract.
      * 
-     * @param _payees Name of the edition contract
-     * @param _pbsShares Symbol of the edition contract
+     * @param _payees list of addresses receiving a share 
+     * @param _shares list shares in pbs, one per each address
      */
-    function createSplitter(address[] memory _payees, uint256[] memory _pbsShares) external returns (address) {
-        uint16 totalShares = 0;
-        for (uint i = 0; i < _payees.length; i++) {
-            totalShares += uint16(_pbsShares[i]);
-        }
-        require(totalShares <= 10_000, "Exceeding fees!");
+    function createSplitter(address[] memory _payees, uint256[] memory _shares) external returns (address payable) {
         uint256 id = counter.current();
         address payable instance = payable(ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id))));
-        ISplitter(instance).initialize(_payees, _pbsShares);
+        ISplitter(instance).initialize(_payees, _shares);
         emit CreatedSplitter(id, msg.sender, _payees, instance);
         counter.increment();
         return instance;
@@ -55,11 +50,11 @@ contract SplitterFactory  {
     /**
      * Gets a splitter given the unique identifier
      * 
-     * @param splitterId id of splitter to get contract for
+     * @param index id of splitter to get contract for
      * @return the Splitterayment contract
      */
-    function getSplitterAtId(uint256 splitterId) external view returns (ISplitter) {
-        return ISplitter(payable(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(splitterId)), address(this))));
+    function getSplitterAtIndex(uint256 index) external view returns (ISplitter) {
+        return ISplitter(payable(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this))));
     }
 
     /**
