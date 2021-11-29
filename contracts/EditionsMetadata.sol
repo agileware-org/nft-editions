@@ -14,7 +14,7 @@ import {MetadataHelper} from "./MetadataHelper.sol";
 /**
  * Shared NFT logic for rendering metadata associated with editions
  */
-contract EditionMetadata is MetadataHelper {
+contract EditionsMetadata is MetadataHelper {
 
     /**
      * Generates edition metadata from storage information as base64-json blob

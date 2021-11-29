@@ -14,81 +14,63 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-import {EditionMetadata} from "./EditionMetadata.sol";
-import {IEdition} from "./IEdition.sol";
+import {EditionsMetadata} from "./EditionsMetadata.sol";
+import {IMintableEditions} from "./IMintableEditions.sol";
 
 /**
  * This contract allows dynamic NFT minting.
  * 
  * Operations allow for selling publicly, partial or total giveaways, direct giveaways and rewardings.
  */
-contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpgradeable {
+contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpgradeable {
     
     using CountersUpgradeable for CountersUpgradeable.Counter;
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
-    event PaymentReleased(address to, uint256 amount);
-    event PaymentReceived(address from, uint256 amount);
 
-    // token description
-    string public description;
+    // Token description
+    string private description;
 
-    // token content URL
-    string public contentUrl;
+    // Token content URL
+    string private contentUrl;
     // hash for the associated content
-    bytes32 public contentHash;
-    // type of content
-    uint8 internal contentType;
+    bytes32 private contentHash;
     
-    // royalties ERC2981 in bps
-    uint16 royalties;
+    // Royalties ERC2981
+    uint16 royaltyBPS;
 
-    // total size of tokens this edition can generate
+    // Total size of edition that can be minted
     uint64 public editionSize;
-
-    // curator fees in bbs
-    uint16 curatorFees;
     
-    // address receiving the withdraw payment
-    address payable internal curator;
-
-    // token id counter
-    CountersUpgradeable.Counter private counter;
+    // Current token id minted
+    CountersUpgradeable.Counter private atEditionId;
     
-    // NFT rendering logic
-    EditionMetadata private immutable metadata;
+    // Addresses allowed to mint edition
+    mapping(address => uint16) allowedMinters;
 
-    // addresses allowed to mint edition
-    mapping(address => uint16) internal allowedMinters;
-
-    // price for sale
+    // Price for sale
     uint256 public salePrice;
 
-    // withdrawn balance
-    uint256 private totalReleased;
+    // NFT rendering logic
+    EditionsMetadata private immutable metadata;
 
-    mapping(address => uint16) private shares;
-    mapping(address => uint256) private released;
-
-
-    constructor(EditionMetadata _metadata) {
+    // Global constructor for factory
+    constructor(EditionsMetadata _metadata) {
         metadata = _metadata;
     }
 
     /**
-     * Creates a new edition and sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later.
+     * Function to create a new edition. Can only be called by the allowed creator
+     * Sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later
      * 
-     * @param _owner address of the edition creator: can authorize, mint, gets royalties and sales payouts, can update the content URL.
-     * @param _name name of edition, used in the title as "$name $tokenId/$editionSize"
-     * @param _symbol symbol of the new token contract
-     * @param _description description of edition, used in the description field of the NFT
-     * @param _contentUrl content URL of the edition
-     * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH)
-     * @param _contentType type of content [0=image, 1=animation/video/audio]
-     * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition
-     * @param _royalties royalties paid to the creator upon token selling
-     * @param _curator address receiving the curator fees (can be the zero-address for no curator)
-     * @param _curatorFees shares in bps destined to the curator
+     * @param _owner User that owns and can mint the edition, gets royalty and sales payouts and can update the base url if needed.
+     * @param _name Name of edition, used in the title as "$NAME NUMBER/TOTAL"
+     * @param _symbol Symbol of the new token contract
+     * @param _description Description of edition, used in the description field of the NFT
+     * @param _contentUrl Content URL of the edition.
+     * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH).
+     * @param _editionSize Number of editions that can be minted in total. If 0, unlimited editions can be minted.
+     * @param _royaltyBPS Royalties paid to the creator upon token selling
      */
     function initialize(
         address _owner,
@@ -97,32 +79,25 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint8 _contentType,
         uint64 _editionSize,
-        uint16 _royalties,
-        address _curator,
-        uint16 _curatorFees
+        uint16 _royaltyBPS
     ) public initializer {
+        require(_royaltyBPS < 10_000, "Royalties: Too high");
         __ERC721_init(_name, _symbol);
         __Ownable_init();
-
-        transferOwnership(_owner); // set ownership
+        // Set ownership to original sender of edition creation call
+        transferOwnership(_owner);
         description = _description;
         contentUrl = _contentUrl;
         contentHash = _contentHash;
-        contentType = _contentType;
-        editionSize = _editionSize;
-        counter.increment(); // edition starts at id 1
-
-        require(_royalties < 10_000, "Royalties too high");
-        royalties = _royalties;
-        if(_curator != address(0x0)) {
-            require(_curatorFees > 0 && _curatorFees < 10_000, "Invalid curator fees");
-            curator = payable(_curator);
-            curatorFees = _curatorFees;
+        if (_editionSize == 0) {
+            editionSize = type(uint64).max;
         } else {
-            curatorFees = 0;
+            editionSize = _editionSize;
         }
+        royaltyBPS = _royaltyBPS;
+        // Editions start id is 1
+        atEditionId.increment();
     }
 
 
@@ -130,8 +105,13 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * Returns the number of tokens minted within this edition 
      */
      function totalSupply() public view returns (uint256) {
-        return counter.current() - 1;
+        return atEditionId.current() - 1;
     }
+    
+    /**
+        Simple eth-based sales function
+        More complex sales functions can be implemented through ISingleEditionMintable interface
+     */
 
     /**
      * Basic ETH-based sales operation, performed at the given set price.
@@ -158,28 +138,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * This operation transfers all ETHs from the contract to the owner minus the curator dividends, if any.
+     * This operation transfers all ETHs from the edition to the edition owner, available solely for the contract owner.
      */
-    function withdraw() onlyOwner external {
-        _pay(payable(super.owner()), 10_000 - curatorFees);
-    }
-
-    /**
-     * This operation transfers the curator dividends to the curator, if any.
-     */
-    function release() public {
-        require(curator != address(0x0), "Contract has no curator");
-        _pay(payable(curator), curatorFees);
-    }
-
-    function _pay(address payable _account, uint16 _shares) internal {
-        uint256 totalReceived = address(this).balance + totalReleased;
-        uint256 payment = (totalReceived * _shares) / 10_000 - released[_account];
-        require(payment != 0, "Account is not due payment");
-        released[_account] += payment;
-        totalReleased += payment;
-        AddressUpgradeable.sendValue(_account, payment);
-        emit PaymentReleased(_account, payment);
+    function withdraw() external onlyOwner {
+        AddressUpgradeable.sendValue(payable(owner()), address(this).balance);
     }
 
     /**
@@ -198,6 +160,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
 
     /**
      * If caller is listed as an allowed minter, mints one NFT for him.
+     * 
      */
     function mintEdition() external override returns (uint256) {
         require(_isAllowedToMint(), "Minting not allowed");
@@ -210,10 +173,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * Mints multiple tokens, one for each of the given list of addresses.
+     * Mints multiple editions, one for each of the given list of addresses.
      * Only the edition owner can use this operation and it is intended fo partial giveaways.
      * 
-     * @param recipients list of addresses to send the newly minted tokens to
+     * @param recipients list of addresses to send the newly minted editions to
      */
     function mintEditions(address[] memory recipients) external onlyOwner override returns (uint256) {
         return _mintEditions(recipients);
@@ -249,11 +212,11 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /** 
-     * Returns the number of tokens still available for minting (uint64 when open edition)
+     * Returns the number of editions allowed to be minted (uint64 when open edition)
      */
     function numberCanMint() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
-        return editionSize + 1 - counter.current();
+        return editionSize + 1 - atEditionId.current();
     }
 
     /**
@@ -271,14 +234,14 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * Called by the public edition minting functions.
      */
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
-        uint64 startAt = uint64(counter.current());
-        uint64 endAt = uint64(startAt + recipients.length - 1);
-        require(editionSize == 0 || endAt <= editionSize, "Sold out");
-        while (counter.current() <= endAt) {
-            _mint(recipients[counter.current() - startAt], counter.current());
-            counter.increment();
+        uint256 startAt = atEditionId.current();
+        uint256 endAt = startAt + recipients.length - 1;
+        require(endAt <= editionSize, "Sold out");
+        while (atEditionId.current() <= endAt) {
+            _mint(recipients[atEditionId.current() - startAt], atEditionId.current());
+            atEditionId.increment();
         }
-        return counter.current();
+        return atEditionId.current();
     }
 
     /**
@@ -290,25 +253,25 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * Get URI for given token id
+     * Get metadata URI for given token id
      * 
      * @param tokenId token id to get uri for
      * @return base64-encoded json metadata object
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "No token");
-        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, editionSize);
+        return metadata.createMetadataEdition(name(), description, contentUrl, tokenId, editionSize);
     }
     
      /**
       * ERC2981 - Gets royalty information for token
-      * @param _value the sale price for this token
+      * @param _salePrice the sale price for this token
       */
-    function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
+    function royaltyInfo(uint256, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
         if (owner() == address(0x0)) {
             return (owner(), 0);
         }
-        return (owner(), (_value * royalties) / 10_000);
+        return (owner(), (_salePrice * royaltyBPS) / 10_000);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
