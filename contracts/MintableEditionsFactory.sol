@@ -11,9 +11,9 @@ pragma solidity 0.8.6;
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
-import "./Edition.sol";
+import "./MintableEditions.sol";
 
-contract EditionFactory {
+contract MintableEditionsFactory {
     using Counters for Counters.Counter;
 
     // Counter for current contract id
@@ -65,8 +65,8 @@ contract EditionFactory {
         contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        Edition(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royalties, _curator, _curatorFees);
-        emit CreatedEdition(id, msg.sender, _curator, _editionSize, instance);
+        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royalties, _curator, _curatorFees);
+        emit CreatedEditions(id, msg.sender, _curator, _editionSize, instance);
         counter.increment();
         return instance;
     }
@@ -77,8 +77,8 @@ contract EditionFactory {
      * @param index zero-based index of edition to get contract for
      * @return the Edition NFT contract
      */
-    function get(uint256 index) external view returns (Edition) {
-        return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this)));
+    function get(uint256 index) external view returns (MintableEditions) {
+        return MintableEditions(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this)));
     }
 
     /**
@@ -98,5 +98,5 @@ contract EditionFactory {
      * @param size the number of NFTs this edition consists of
      * @param contractAddress the address of the contract representing the edition
      */
-    event CreatedEdition(uint256 indexed index, address indexed creator, address indexed payee, uint256 size, address contractAddress);
+    event CreatedEditions(uint256 indexed index, address indexed creator, address indexed payee, uint256 size, address contractAddress);
 }
