@@ -28,7 +28,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
     event PaymentReleased(address to, uint256 amount);
-    event PaymentReceived(address from, uint256 amount);
+    event PaymentFailed(address to);
+
+    // token id counter
+    CountersUpgradeable.Counter private counter;
 
     // token description
     string public description;
@@ -41,19 +44,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     uint8 internal contentType;
     
     // royalties ERC2981 in bps
-    uint16 royalties;
+    uint16 public royalties;
 
-    // total size of tokens this edition can generate
-    uint64 public editionSize;
-
-    // curator fees in bbs
-    uint16 curatorFees;
-    
-    // address receiving the withdraw payment
-    address payable internal curator;
-
-    // token id counter
-    CountersUpgradeable.Counter private counter;
+    // the number of tokens this editions contract consists of
+    uint64 public size;
     
     // NFT rendering logic
     EditionMetadata private immutable metadata;
@@ -62,14 +56,14 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     mapping(address => uint16) internal allowedMinters;
 
     // price for sale
-    uint256 public salePrice;
+    uint256 public price;
 
     // withdrawn balance
     uint256 private totalReleased;
 
+    address[] private shareholders;
     mapping(address => uint16) private shares;
     mapping(address => uint256) private released;
-
 
     constructor(EditionMetadata _metadata) {
         metadata = _metadata;
@@ -85,10 +79,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _contentUrl content URL of the edition
      * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH)
      * @param _contentType type of content [0=image, 1=animation/video/audio]
-     * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition
+     * @param _size number of NFTs that can be minted from this editions contract: set to 0 for unbound
      * @param _royalties royalties paid to the creator upon token selling
-     * @param _curator address receiving the curator fees (can be the zero-address for no curator)
-     * @param _curatorFees shares in bps destined to the curator
+     * @param _shareholders addresses receiving shares (can be empty)
+     * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
     function initialize(
         address _owner,
@@ -98,10 +92,10 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         string memory _contentUrl,
         bytes32 _contentHash,
         uint8 _contentType,
-        uint64 _editionSize,
+        uint64 _size,
         uint16 _royalties,
-        address _curator,
-        uint16 _curatorFees
+        address[] memory _shareholders,
+        uint16[] memory _shares
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
@@ -111,20 +105,31 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         contentType = _contentType;
-        editionSize = _editionSize;
+        size = _size;
         counter.increment(); // edition starts at id 1
 
         require(_royalties < 10_000, "Royalties too high");
         royalties = _royalties;
-        if(_curator != address(0x0)) {
-            require(_curatorFees > 0 && _curatorFees < 10_000, "Invalid curator fees");
-            curator = payable(_curator);
-            curatorFees = _curatorFees;
-        } else {
-            curatorFees = 0;
+
+        require(_shareholders.length == _shares.length, "Shares and holders mismatch");
+        
+        uint16 _totalShares;
+        for (uint256 i = 0; i < _shareholders.length; i++) {
+            _addPayee(_shareholders[i], _shares[i]);
+            _totalShares += _shares[i];
         }
+        require(_totalShares < 10_000, "Shares too high");
+        _addPayee(_owner, 10_000 - _totalShares);
     }
 
+    function _addPayee(address _account, uint16 _shares) internal {
+        require(_account != address(0), "Shareholder is zero address");
+        require(_shares > 0 && _shares < 10_000, "Shares are invalid");
+        require(shares[_account] == 0, "Shareholder already has shares");
+
+        shareholders.push(_account);
+        shares[_account] = _shares;
+    }
 
     /**
      * Returns the number of tokens minted within this edition 
@@ -138,11 +143,11 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * This operation is open to everyone as soon as the salePrice is set to a non-zero value.
      */
     function purchase() external payable returns (uint256) {
-        require(salePrice > 0, "Not for sale");
-        require(msg.value == salePrice, "Wrong price");
+        require(price > 0, "Not for sale");
+        require(msg.value == price, "Wrong price");
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
-        emit EditionSold(salePrice, msg.sender);
+        emit EditionSold(price, msg.sender);
         return _mintEditions(toMint);
     }
 
@@ -152,34 +157,32 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * 
      * @param _wei if sale price is 0, no sale is allowed, otherwise the provided amount of WEI is needed to start the sale.
      */
-    function setSalePrice(uint256 _wei) external onlyOwner {
-        salePrice = _wei;
-        emit PriceChanged(salePrice);
+    function setPrice(uint256 _wei) external onlyOwner {
+        price = _wei;
+        emit PriceChanged(price);
     }
 
     /**
      * This operation transfers all ETHs from the contract to the owner minus the curator dividends, if any.
      */
-    function withdraw() onlyOwner external {
-        _pay(payable(super.owner()), 10_000 - curatorFees);
+    function withdraw() external {
+        for (uint i = 0; i < shareholders.length; i++) {
+            try this.withdraw(payable(shareholders[i])) returns (uint256 payment) {
+                emit PaymentReleased(shareholders[i], payment);
+            } catch {
+                emit PaymentFailed(shareholders[i]);
+            }
+        }
     }
 
-    /**
-     * This operation transfers the curator dividends to the curator, if any.
-     */
-    function release() public {
-        require(curator != address(0x0), "Contract has no curator");
-        _pay(payable(curator), curatorFees);
-    }
-
-    function _pay(address payable _account, uint16 _shares) internal {
-        uint256 totalReceived = address(this).balance + totalReleased;
-        uint256 payment = (totalReceived * _shares) / 10_000 - released[_account];
-        require(payment != 0, "Account is not due payment");
-        released[_account] += payment;
-        totalReleased += payment;
-        AddressUpgradeable.sendValue(_account, payment);
-        emit PaymentReleased(_account, payment);
+    function withdraw(address payable _account) external returns (uint256) {
+        uint256 _totalReceived = address(this).balance + totalReleased;
+        uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - released[_account];
+        require(_amount != 0, "Account is not due payment");
+        released[_account] += _amount;
+        totalReleased += _amount;
+        AddressUpgradeable.sendValue(_account, _amount);
+        return _amount;
     }
 
     /**
@@ -253,7 +256,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      */
     function numberCanMint() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
-        return editionSize + 1 - counter.current();
+        return size + 1 - counter.current();
     }
 
     /**
@@ -273,7 +276,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
         uint64 startAt = uint64(counter.current());
         uint64 endAt = uint64(startAt + recipients.length - 1);
-        require(editionSize == 0 || endAt <= editionSize, "Sold out");
+        require(size == 0 || endAt <= size, "Sold out");
         while (counter.current() <= endAt) {
             _mint(recipients[counter.current() - startAt], counter.current());
             counter.increment();
@@ -297,7 +300,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "No token");
-        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, editionSize);
+        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, size);
     }
     
      /**

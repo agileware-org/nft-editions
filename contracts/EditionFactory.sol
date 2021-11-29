@@ -39,15 +39,15 @@ contract EditionFactory {
      * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which must refer to a content having the same hash.
      * Returns the id of the created editions contract.
      * 
-     * @param _name Name of the edition contract
-     * @param _symbol Symbol of the edition contract
-     * @param _description Metadata: description of the edition entry
-     * @param _contentUrl Metadata: content url of the edition entry
-     * @param _contentHash Metadata: SHA-256 hash of the content of the edition entry
-     * @param _editionSize total size of the edition (number of possible editions)
+     * @param _name Name of the editions contract
+     * @param _symbol Symbol of the editions contract
+     * @param _description Metadata: description of the editions entry
+     * @param _contentUrl Metadata: content url of the editions entry
+     * @param _contentHash Metadata: SHA-256 hash of the content of the editions entry
+     * @param _size the number of tokens this editions contract consists of
      * @param _royalties perpetual royalties paid to the creator upon token selling
-     * @param _curator address receiving the curator fees (can be the zero-address for no curator)
-     * @param _curatorFees shares in bps destined to the curator
+     * @param _shareholders addresses receiving shares (can be empty)
+     * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
     function create(
         string memory _name,
@@ -56,35 +56,33 @@ contract EditionFactory {
         string memory _contentUrl,
         bytes32 _contentHash,
         uint8 _contentType,
-        uint64 _editionSize,
+        uint64 _size,
         uint16 _royalties,
-        address _curator,
-        uint16 _curatorFees
+        address[] memory _shareholders,
+        uint16[] memory _shares
     ) external returns (address) {
         require(!contents[_contentHash], "Edition: duplicated content!");
         contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        Edition(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royalties, _curator, _curatorFees);
-        emit CreatedEdition(id, msg.sender, _curator, _editionSize, instance);
+        Edition(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shareholders, _shares);
+        emit CreatedEdition(id, msg.sender, _shareholders, _size, instance);
         counter.increment();
         return instance;
     }
 
     /**
-     * Gets an edition given the unique identifier. Editions ids are zero-based.
+     * Gets an editions contract given the unique identifier. Contract ids are zero-based.
      * 
-     * @param index zero-based index of edition to get contract for
-     * @return the Edition NFT contract
+     * @param index zero-based index of editions contract to retrieve
+     * @return the editions contract
      */
     function get(uint256 index) external view returns (Edition) {
         return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this)));
     }
 
-    /**
-     * Returns the number of editions created so far through this factory
-     * 
-     * @return the number of editions created so far through this factory
+    /** 
+     * @return the number of edition contracts created so far through this factory
      */
      function instances() external view returns (uint256) {
         return counter.current();
@@ -93,10 +91,10 @@ contract EditionFactory {
     /**
      * Emitted when an edition is created reserving the corresponding token IDs.
      * 
-     * @param index the identifier of the newly created edition
-     * @param creator the edition's owner
-     * @param size the number of NFTs this edition consists of
-     * @param contractAddress the address of the contract representing the edition
+     * @param index the identifier of the newly created editions contract
+     * @param creator the editions' owner
+     * @param size the number of tokens this editions contract consists of
+     * @param contractAddress the address of the contract representing the editions
      */
-    event CreatedEdition(uint256 indexed index, address indexed creator, address indexed payee, uint256 size, address contractAddress);
+    event CreatedEdition(uint256 indexed index, address indexed creator, address[] indexed shareholders, uint64 size, address contractAddress);
 }
