@@ -7,7 +7,7 @@
  */
 pragma solidity 0.8.6;
 
-interface IEdition {
+interface IMintableEditions {
     /**
      * Mints one token for the msg.sender. 
      */

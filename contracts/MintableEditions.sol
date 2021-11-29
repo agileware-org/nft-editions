@@ -14,15 +14,15 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-import {EditionMetadata} from "./EditionMetadata.sol";
-import {IEdition} from "./IEdition.sol";
+import "./EditionMetadata.sol";
+import "./IMintableEditions.sol";
 
 /**
  * This contract allows dynamic NFT minting.
  * 
  * Operations allow for selling publicly, partial or total giveaways, direct giveaways and rewardings.
  */
-contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpgradeable {
+contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEditions, OwnableUpgradeable {
     
     using CountersUpgradeable for CountersUpgradeable.Counter;
     event PriceChanged(uint256 amount);
@@ -225,7 +225,7 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     /**
      * Simple override for owner interface.
      */
-    function owner() public view override(OwnableUpgradeable, IEdition) returns (address) {
+    function owner() public view override(OwnableUpgradeable, IMintableEditions) returns (address) {
         return super.owner();
     }
 
