@@ -9,22 +9,21 @@
 pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./Edition.sol";
 
-contract EditionFactory is Ownable {
+contract EditionFactory {
     using Counters for Counters.Counter;
 
     // Counter for current contract id
-    Counters.Counter private counter;
+    Counters.Counter internal counter;
 
     // Address for implementation of Edition contract to clone
     address private implementation;
 
-    // Store for hash codes of edition contents: used to prevent re-issuing of the same content
-    mapping(bytes32 => bool) private editionHashes;
+    // Store for hash codes of editions contents: used to prevent re-issuing of the same content
+    mapping(bytes32 => bool) private contents;
 
     /**
      * Initializes the factory with the address of the implementation contract template
@@ -42,14 +41,15 @@ contract EditionFactory is Ownable {
      * 
      * @param _name Name of the edition contract
      * @param _symbol Symbol of the edition contract
-     * @param _description Metadata: Description of the edition entry
-     * @param _contentUrl Metadata: Image url (semi-required) of the edition entry
-     * @param _contentHash Metadata: SHA-256 hash of the Image of the edition entry (if not image, can be 0x0)
-     * @param _editionSize Total size of the edition (number of possible editions)
-     * @param _royaltyBPS royalties paid to the creator upon token selling
-     * @param _payee address receiving the contract balance upon withdrawal
+     * @param _description Metadata: description of the edition entry
+     * @param _contentUrl Metadata: content url of the edition entry
+     * @param _contentHash Metadata: SHA-256 hash of the content of the edition entry
+     * @param _editionSize total size of the edition (number of possible editions)
+     * @param _royalties perpetual royalties paid to the creator upon token selling
+     * @param _curator address receiving the curator fees (can be the zero-address for no curator)
+     * @param _curatorFees shares in bps destined to the curator
      */
-    function createEdition(
+    function create(
         string memory _name,
         string memory _symbol,
         string memory _description,
@@ -57,15 +57,16 @@ contract EditionFactory is Ownable {
         bytes32 _contentHash,
         uint8 _contentType,
         uint64 _editionSize,
-        uint16 _royaltyBPS,
-        address payable _payee
+        uint16 _royalties,
+        address _curator,
+        uint16 _curatorFees
     ) external returns (address) {
-        require(!editionHashes[_contentHash], "Edition: duplicated content!");
-        editionHashes[_contentHash] = true;
+        require(!contents[_contentHash], "Edition: duplicated content!");
+        contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        Edition(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royaltyBPS, _payee);
-        emit CreatedEdition(id, msg.sender, _payee, _editionSize, instance);
+        Edition(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _editionSize, _royalties, _curator, _curatorFees);
+        emit CreatedEdition(id, msg.sender, _curator, _editionSize, instance);
         counter.increment();
         return instance;
     }
@@ -76,8 +77,7 @@ contract EditionFactory is Ownable {
      * @param index zero-based index of edition to get contract for
      * @return the Edition NFT contract
      */
-    function getEditionAtIndex(uint256 index) external view returns (Edition) {
-        require(index < counter.current(), "Invalid index!");
+    function get(uint256 index) external view returns (Edition) {
         return Edition(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this)));
     }
 
@@ -86,7 +86,7 @@ contract EditionFactory is Ownable {
      * 
      * @return the number of editions created so far through this factory
      */
-     function getEditionsSize() external view returns (uint256) {
+     function instances() external view returns (uint256) {
         return counter.current();
     }
 

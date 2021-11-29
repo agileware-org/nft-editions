@@ -27,25 +27,30 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     using CountersUpgradeable for CountersUpgradeable.Counter;
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
+    event PaymentReleased(address to, uint256 amount);
+    event PaymentReceived(address from, uint256 amount);
 
     // token description
-    string private description;
+    string public description;
 
     // token content URL
-    string private contentUrl;
+    string public contentUrl;
     // hash for the associated content
-    bytes32 private contentHash;
+    bytes32 public contentHash;
     // type of content
-    uint8 contentType;
+    uint8 internal contentType;
     
     // royalties ERC2981 in bps
     uint16 royalties;
 
     // total size of tokens this edition can generate
     uint64 public editionSize;
+
+    // curator fees in bbs
+    uint16 curatorFees;
     
     // address receiving the withdraw payment
-    address payable private payee;
+    address payable internal curator;
 
     // token id counter
     CountersUpgradeable.Counter private counter;
@@ -54,10 +59,17 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     EditionMetadata private immutable metadata;
 
     // addresses allowed to mint edition
-    mapping(address => uint16) allowedMinters;
+    mapping(address => uint16) internal allowedMinters;
 
     // price for sale
     uint256 public salePrice;
+
+    // withdrawn balance
+    uint256 private totalReleased;
+
+    mapping(address => uint16) private shares;
+    mapping(address => uint256) private released;
+
 
     constructor(EditionMetadata _metadata) {
         metadata = _metadata;
@@ -75,7 +87,8 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
      * @param _contentType type of content [0=image, 1=animation/video/audio]
      * @param _editionSize number of NFTs that can be minted from this edition: set to 0 for an unbound edition
      * @param _royalties royalties paid to the creator upon token selling
-     * @param _payee address receiving the contract balance upon withdrawal
+     * @param _curator address receiving the curator fees (can be the zero-address for no curator)
+     * @param _curatorFees shares in bps destined to the curator
      */
     function initialize(
         address _owner,
@@ -87,26 +100,29 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
         uint8 _contentType,
         uint64 _editionSize,
         uint16 _royalties,
-        address payable _payee
+        address _curator,
+        uint16 _curatorFees
     ) public initializer {
-        require(_royalties < 10_000, "Royalties: too high");
         __ERC721_init(_name, _symbol);
         __Ownable_init();
-        // set ownership
-        transferOwnership(_owner);
+
+        transferOwnership(_owner); // set ownership
         description = _description;
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         contentType = _contentType;
         editionSize = _editionSize;
+        counter.increment(); // edition starts at id 1
+
+        require(_royalties < 10_000, "Royalties too high");
         royalties = _royalties;
-        if (_payee == address(0x0)) {
-            payee = payable(_owner);
+        if(_curator != address(0x0)) {
+            require(_curatorFees > 0 && _curatorFees < 10_000, "Invalid curator fees");
+            curator = payable(_curator);
+            curatorFees = _curatorFees;
         } else {
-            payee = _payee;
+            curatorFees = 0;
         }
-        // edition start id is 1
-        counter.increment();
     }
 
 
@@ -142,10 +158,28 @@ contract Edition is ERC721Upgradeable, IERC2981Upgradeable, IEdition, OwnableUpg
     }
 
     /**
-     * This operation transfers all ETHs from the edition to the payee.
+     * This operation transfers all ETHs from the contract to the owner minus the curator dividends, if any.
      */
-    function withdraw() external {
-        AddressUpgradeable.sendValue(payable(payee), address(this).balance);
+    function withdraw() onlyOwner external {
+        _pay(payable(super.owner()), 10_000 - curatorFees);
+    }
+
+    /**
+     * This operation transfers the curator dividends to the curator, if any.
+     */
+    function release() public {
+        require(curator != address(0x0), "Contract has no curator");
+        _pay(payable(curator), curatorFees);
+    }
+
+    function _pay(address payable _account, uint16 _shares) internal {
+        uint256 totalReceived = address(this).balance + totalReleased;
+        uint256 payment = (totalReceived * _shares) / 10_000 - released[_account];
+        require(payment != 0, "Account is not due payment");
+        released[_account] += payment;
+        totalReleased += payment;
+        AddressUpgradeable.sendValue(_account, payment);
+        emit PaymentReleased(_account, payment);
     }
 
     /**
