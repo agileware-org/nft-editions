@@ -49,7 +49,7 @@ contract MintableEditionsFactory {
      * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
-     * @returns the address of the editions contract created
+     * @return the address of the editions contract created
      */
     function create(
         string memory _name,
