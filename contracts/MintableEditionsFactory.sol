@@ -9,29 +9,27 @@
 pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 import "./MintableEditions.sol";
+import "./MintableEditionsFactoryStorage.sol";
 
-contract MintableEditionsFactory {
+contract MintableEditionsFactory is MintableEditionsFactoryStorage, OwnableUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
     CountersUpgradeable.Counter internal counter;
 
-    // Address for implementation of Edition contract to clone
-    address private implementation;
-
-    // Store for hash codes of editions contents: used to prevent re-issuing of the same content
-    mapping(bytes32 => bool) private contents;
-
     /**
      * Initializes the factory with the address of the implementation contract template
      * 
-     * @param _implementation Edition implementation contract to clone
+     * @param _implementation MintableEditions implementation contract to clone
+     * @param _metadata EditionMetadata implementation contract to use
      */
-    constructor(address _implementation) {
+    function initialize (address _implementation, address _metadata) external initializer {
         implementation = _implementation;
+        metadata = _metadata;
     }
 
     /**
@@ -44,7 +42,7 @@ contract MintableEditionsFactory {
      * @param _description description of tokens of this edition
      * @param _contentUrl content URL of the edition tokens
      * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
-     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _contentType type of tokens content [0=image, 1=animation/video/audio, 2=youtube video]
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shareholders addresses receiving shares (can be empty)
@@ -67,7 +65,7 @@ contract MintableEditionsFactory {
         contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shareholders, _shares);
+        MintableEditions(instance).initialize(msg.sender, metadata, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shareholders, _shares);
         emit CreatedEditions(id, msg.sender, _shareholders, _size, instance);
         counter.increment();
         return instance;

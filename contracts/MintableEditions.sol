@@ -16,13 +16,15 @@ import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Addr
 
 import "./EditionMetadata.sol";
 import "./IMintableEditions.sol";
+import "./MintableEditionsStorage.sol";
+import "./MintableEditionsSharesStorage.sol";
 
 /**
  * This contract allows dynamic NFT minting.
  * 
  * Operations allow for selling publicly, partial or total giveaways, direct giveaways and rewardings.
  */
-contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEditions, OwnableUpgradeable {
+contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, OwnableUpgradeable, MintableEditionsStorage, MintableEditionsSharesStorage, IMintableEditions {
     
     using CountersUpgradeable for CountersUpgradeable.Counter;
     
@@ -34,42 +36,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     // token id counter
     CountersUpgradeable.Counter private counter;
 
-    // token description
-    string public description;
-
-    // token content URL
-    string public contentUrl;
-    // hash for the associated content
-    bytes32 public contentHash;
-    // type of content
-    uint8 internal contentType;
     
-    // the number of editions this contract can mint
-    uint64 public size;
-    
-    // royalties ERC2981 in bps
-    uint8 internal royaltiesType;
-    uint16 public royalties;
-
-    
-    // NFT rendering logic
-    EditionMetadata private immutable metadata;
-
-    // addresses allowed to mint editions
-    mapping(address => uint16) internal allowedMinters;
-
-    // price for sale
-    uint256 public price;
-
-    address[] private shareholders;
-    mapping(address => uint16) private shares;
-    mapping(address => uint256) private witdrawals;
-    // balance withdrawn so far
-    uint256 private withdrawn;
-
-    constructor(EditionMetadata _metadata) {
-        metadata = _metadata;
-    }
 
     /**
      * Creates a new edition and sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later.
@@ -88,6 +55,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      */
     function initialize(
         address _owner,
+        EditionMetadata _metadata,
         string memory _name,
         string memory _symbol,
         string memory _description,
@@ -101,7 +69,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
-
+        metadata = _metadata;
         transferOwnership(_owner); // set ownership
         description = _description;
         contentUrl = _contentUrl;
