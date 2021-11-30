@@ -1,2 +1,5 @@
 ﻿.deps
 contracts/artifacts
+node_modules
+cache
+artifacts
