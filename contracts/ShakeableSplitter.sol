@@ -12,6 +12,7 @@ import {PaymentSplitterUpgradeable} from "@openzeppelin/contracts-upgradeable/fi
 import "./ISplitter.sol";
 
 contract ShakeableSplitter is PaymentSplitterUpgradeable, ISplitter  {
+    event PaymentFailed(address to);
     uint256 payees;
 
     function initialize(address[] memory _payees, uint256[] memory _shares) public override initializer {
@@ -27,7 +28,11 @@ contract ShakeableSplitter is PaymentSplitterUpgradeable, ISplitter  {
 
     function shake() public {
         for (uint i = 0; i < payees; i++) {
-            super.release(payable(super.payee(i)));
+            try this.release(payable(super.payee(i))) {
+                // do nothing
+            } catch {
+                emit PaymentFailed(super.payee(i));
+            }
         }
     }
 }
