@@ -25,6 +25,7 @@ import "./IMintableEditions.sol";
 contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEditions, OwnableUpgradeable {
     
     using CountersUpgradeable for CountersUpgradeable.Counter;
+    
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
     event PaymentReleased(address to, uint256 amount);
@@ -43,27 +44,28 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     // type of content
     uint8 internal contentType;
     
+    // the number of editions this contract can mint
+    uint64 public size;
+    
     // royalties ERC2981 in bps
+    uint8 internal royaltiesType;
     uint16 public royalties;
 
-    // the number of tokens this editions contract consists of
-    uint64 public size;
     
     // NFT rendering logic
     EditionMetadata private immutable metadata;
 
-    // addresses allowed to mint edition
+    // addresses allowed to mint editions
     mapping(address => uint16) internal allowedMinters;
 
     // price for sale
     uint256 public price;
 
-    // withdrawn balance
-    uint256 private totalReleased;
-
     address[] private shareholders;
     mapping(address => uint16) private shares;
-    mapping(address => uint256) private released;
+    mapping(address => uint256) private witdrawals;
+    // balance withdrawn so far
+    uint256 private withdrawn;
 
     constructor(EditionMetadata _metadata) {
         metadata = _metadata;
@@ -72,15 +74,15 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /**
      * Creates a new edition and sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later.
      * 
-     * @param _owner address of the edition creator: can authorize, mint, gets royalties and sales payouts, can update the content URL.
-     * @param _name name of edition, used in the title as "$name $tokenId/$editionSize"
-     * @param _symbol symbol of the new token contract
-     * @param _description description of edition, used in the description field of the NFT
-     * @param _contentUrl content URL of the edition
-     * @param _contentHash SHA256 of the given content in bytes32 format (0xHASH)
-     * @param _contentType type of content [0=image, 1=animation/video/audio]
-     * @param _size number of NFTs that can be minted from this editions contract: set to 0 for unbound
-     * @param _royalties royalties paid to the creator upon token selling
+     * @param _owner can authorize, mint, gets royalties and a dividend of sales, can update the content URL.
+     * @param _name name of editions, used in the title as "$name $tokenId/$size"
+     * @param _symbol symbol of the tokens mined by this contract
+     * @param _description description of tokens of this edition
+     * @param _contentUrl content URL of the edition tokens
+     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
+     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
+     * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
@@ -106,7 +108,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         contentHash = _contentHash;
         contentType = _contentType;
         size = _size;
-        counter.increment(); // edition starts at id 1
+        counter.increment(); // token ids start at 1
 
         require(_royalties < 10_000, "Royalties too high");
         royalties = _royalties;
@@ -132,7 +134,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * Returns the number of tokens minted within this edition 
+     * Returns the number of tokens minted so far 
      */
      function totalSupply() public view returns (uint256) {
         return counter.current() - 1;
@@ -163,7 +165,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * This operation transfers all ETHs from the contract to the owner minus the curator dividends, if any.
+     * This operation transfers all ETHs from the contract balance to the shareholders.
      */
     function withdraw() external {
         for (uint i = 0; i < shareholders.length; i++) {
@@ -175,12 +177,15 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         }
     }
 
+    /**
+     * This operation attempts to transfer part of the contract balance to the provided shareholder based on its shares and previous witdrawals.
+     */
     function withdraw(address payable _account) external returns (uint256) {
-        uint256 _totalReceived = address(this).balance + totalReleased;
-        uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - released[_account];
+        uint256 _totalReceived = address(this).balance + withdrawn;
+        uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
         require(_amount != 0, "Account is not due payment");
-        released[_account] += _amount;
-        totalReleased += _amount;
+        witdrawals[_account] += _amount;
+        withdrawn += _amount;
         AddressUpgradeable.sendValue(_account, _amount);
         return _amount;
     }

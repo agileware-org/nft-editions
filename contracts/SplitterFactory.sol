@@ -38,7 +38,7 @@ contract SplitterFactory  {
      * Returns the id of the created splitter contract.
      * 
      * @param _payees list of addresses receiving a share 
-     * @param _shares list shares in pbs, one per each address
+     * @param _shares list shares in bps, one per each address
      */
     function create(address[] memory _payees, uint256[] memory _shares) external returns (address payable) {
         uint256 id = counter.current();

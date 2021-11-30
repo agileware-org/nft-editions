@@ -35,19 +35,21 @@ contract MintableEditionsFactory {
     }
 
     /**
-     * Creates a new edition contract as a factory with a deterministic address, returning the address of the newly created Edition contract.
-     * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which must refer to a content having the same hash.
-     * Returns the id of the created editions contract.
+     * Creates a new editions contract as a factory with a deterministic address, returning the address of the newly created contract.
+     * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which
+     * must refer to a content having the same hash.
      * 
-     * @param _name Name of the editions contract
-     * @param _symbol Symbol of the editions contract
-     * @param _description Metadata: description of the editions entry
-     * @param _contentUrl Metadata: content url of the editions entry
-     * @param _contentHash Metadata: SHA-256 hash of the content of the editions entry
-     * @param _size the number of tokens this editions contract consists of
+     * @param _name name of editions, used in the title as "$name $tokenId/$size"
+     * @param _symbol symbol of the tokens mined by this contract
+     * @param _description description of tokens of this edition
+     * @param _contentUrl content URL of the edition tokens
+     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
+     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
+     * @returns the address of the editions contract created
      */
     function create(
         string memory _name,
