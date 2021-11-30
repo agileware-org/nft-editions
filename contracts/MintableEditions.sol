@@ -115,7 +115,6 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         editionSize = _editionSize;
         counter.increment(); // edition starts at id 1
 
-        require(_royalties < 10_000, "Royalties too high");
         royalties = _royalties;
         if(_curator != address(0x0)) {
             require(_curatorFees > 0 && _curatorFees < 10_000, "Invalid curator fees");
@@ -305,11 +304,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
       * ERC2981 - Gets royalty information for token
       * @param _value the sale price for this token
       */
-    function royaltyInfo(uint256 _tokenId, uint256 _salePrice) external view override returns (address receiver, uint256 royaltyAmount) {
+    function royaltyInfo(uint256 _tokenId, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         if (owner() == address(0x0) || royalties == address(0x0)) {
             return (address(0x0), 0);
         }
-        return IRoyalties(royalties).royaltyInfo(_tokenId, _salePrice);
+        return IRoyalties(royalties).royaltyInfo(_tokenId, _value);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
