@@ -9,15 +9,15 @@
 pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 import "./MintableEditions.sol";
 
 contract MintableEditionsFactory {
-    using Counters for Counters.Counter;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
-    Counters.Counter internal counter;
+    CountersUpgradeable.Counter internal counter;
 
     // Address for implementation of Edition contract to clone
     address private implementation;
