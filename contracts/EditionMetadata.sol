@@ -25,11 +25,11 @@ contract EditionMetadata is MetadataHelper {
      * @param contentUrl URL of image to render for edition
      * @param contentType index of the content type to render for edition
      * @param tokenOfEdition Token ID for specific token
-     * @param editionSize Size of entire edition to show
+     * @param size Size of entire edition to show
      */
-    function createTokenURI(string memory name, string memory description, string memory contentUrl, uint8 contentType, uint256 tokenOfEdition, uint256 editionSize) external pure returns (string memory) {
+    function createTokenURI(string memory name, string memory description, string memory contentUrl, uint8 contentType, uint256 tokenOfEdition, uint256 size) external pure returns (string memory) {
         string memory _tokenMediaData = tokenMediaData(contentUrl, contentType, tokenOfEdition);
-        bytes memory json = createMetadata(name, description, _tokenMediaData, tokenOfEdition, editionSize);
+        bytes memory json = createMetadata(name, description, _tokenMediaData, tokenOfEdition, size);
         return encodeMetadata(json);
     }
 
@@ -40,17 +40,17 @@ contract EditionMetadata is MetadataHelper {
      * @param description Description of NFT in metadata
      * @param mediaData Data for media to include in json object
      * @param tokenOfEdition Token ID for specific token
-     * @param editionSize Size of entire edition to show
+     * @param size Size of entire edition to show
     */
-    function createMetadata(string memory name, string memory description, string memory mediaData, uint256 tokenOfEdition, uint256 editionSize) public pure returns (bytes memory) {
-        bytes memory editionSizeText;
-        if (editionSize > 0) {
-            editionSizeText = abi.encodePacked("/", numberToString(editionSize));
+    function createMetadata(string memory name, string memory description, string memory mediaData, uint256 tokenOfEdition, uint256 size) public pure returns (bytes memory) {
+        bytes memory sizeText;
+        if (size > 0) {
+            sizeText = abi.encodePacked("/", numberToString(size));
         }
-        return abi.encodePacked('{"name": "', name, " ", numberToString(tokenOfEdition), editionSizeText, '", "',
-                'description": "', description, '", "',
+        return abi.encodePacked('{"name":"', name, " ", numberToString(tokenOfEdition), sizeText, '","',
+                'description":"', description, '","',
                 mediaData,
-                'properties": {"number": ', numberToString(tokenOfEdition), ', "name": "', name, '"}}'
+                'properties":{"number":', numberToString(tokenOfEdition), ',"name":"', name, '"}}'
             );
     }
 
@@ -64,9 +64,11 @@ contract EditionMetadata is MetadataHelper {
      */
     function tokenMediaData(string memory contentUrl, uint8 contentType, uint256 tokenOfEdition) public pure returns (string memory) {
         if (contentType == 0) {
-            return string(abi.encodePacked('image": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
+            return string(abi.encodePacked('image":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
         } else if (contentType == 1) {
-            return string(abi.encodePacked('animation_url": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
+            return string(abi.encodePacked('animation_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
+        } else if (contentType == 2) {
+            return string(abi.encodePacked('youtube_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
         }
         return "";
     }
