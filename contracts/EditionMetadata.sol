@@ -47,10 +47,10 @@ contract EditionMetadata is MetadataHelper {
         if (size > 0) {
             sizeText = abi.encodePacked("/", numberToString(size));
         }
-        return abi.encodePacked('{"name": "', name, " ", numberToString(tokenOfEdition), sizeText, '", "',
-                'description": "', description, '", "',
+        return abi.encodePacked('{"name":"', name, " ", numberToString(tokenOfEdition), sizeText, '","',
+                'description":"', description, '","',
                 mediaData,
-                'properties": {"number": ', numberToString(tokenOfEdition), ', "name": "', name, '"}}'
+                'properties":{"number":', numberToString(tokenOfEdition), ',"name":"', name, '"}}'
             );
     }
 
@@ -64,9 +64,11 @@ contract EditionMetadata is MetadataHelper {
      */
     function tokenMediaData(string memory contentUrl, uint8 contentType, uint256 tokenOfEdition) public pure returns (string memory) {
         if (contentType == 0) {
-            return string(abi.encodePacked('image": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
+            return string(abi.encodePacked('image":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
         } else if (contentType == 1) {
-            return string(abi.encodePacked('animation_url": "', contentUrl, "?id=", numberToString(tokenOfEdition),'", "'));
+            return string(abi.encodePacked('animation_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
+        } else if (contentType == 2) {
+            return string(abi.encodePacked('youtube_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'))
         }
         return "";
     }
