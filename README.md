@@ -11,11 +11,11 @@ Instances of this contract can be obtained by using the `createEdition` operatio
 
 Each `MintableEditions` produced has the following characteristics:
 
-* `name` (IMMUTABLE) can be considered the title for the editions produced
+* `name` (IMMUTABLE) can be considered the title for the editions produced, used by OpenSea as name of the collection
 * `symbol` (IMMUTABLE) is the symbol associated with the tokens
-* `description` (IMMUTABLE) can be used to describe the edition to the public
-* `contentUrl` is used to associate some off-chain content, the contract owner can update
-* `contentHash` (IMMUTABLE) sha256 of the associated off-chain content
+* `description` (IMMUTABLE) can be used to describe the edition to the public, can contain [markdown](https://www.markdownguide.org/cheat-sheet/)
+* `contentUrl` is used to associate some off-chain content, the contract owner can update, direct references to IPFS content are possible
+* `contentHash` (IMMUTABLE) sha256 of the associated off-chain content, ensures content uniqueness within the chain
 * `size` (IMMUTABLE) determines how many NFTs of this edition can be minted: if set to 0 then `uint64.max()` tokens can be minted (about _18.5 **quintillions**_)
 * `royalties` (IMMUTABLE) perpetual royalties to be paid to the token owner upon any reselling, in [basis-points](https://www.investopedia.com/terms/b/basispoint.asp) format (eq. `250` corresponding to **2.5%**)
 * `shareholders` (IMMUTABLE) any value collected by this contract sales will be splitted between the shareholders and the owner
@@ -54,6 +54,38 @@ The contract is quite flexible and allows the editions _owner_ to:
 
 | network  | contract                | address                                      |
 |:--------:|------------------------:|----------------------------------------------|
-| rinkeby  | EditionMetadata         | `0x5977B72586a66d91843A62b33498e73cdCB9e1A7` |
-| rinkeby  | MintableEditions        | `0x01659C7edB88e82aF84cF308Fd292b0bdB0a7A92` |
-| rinkeby  | MintableEditionsFactory | `0x9941CcF22801c4BEe905fa3f892AC1E6FbC5B60F` |
+| rinkeby  | EditionMetadata         | `0xe385f0D892dA3E3e5b00799c24a7951AB4580258` |
+| rinkeby  | MintableEditions        | `0xa34dF79750542834Bde8A6A2742541aab846F883` |
+| rinkeby  | MintableEditionsFactory | `0x0dE49432D7F6DF3f05720a543CB47AA22064E86e` |
+
+# Example
+
+Gas required: `652323`
+
+### Description
+An image token (stored on IPFS) able to produce 100 editions, each one with 2.5% perpetual royalties on secondary sales.
+
+Of any revenues this contract might collect, 15% of it will be given to the _curator_ address, the remainder 85% will go to the contract _owner_.
+
+### Properties
+
+| field        | value                                               |
+|-------------:|:----------------------------------------------------|
+| name         | `Roberto Lo Giacco`                                 |
+| symbol       | `RLG`                                               |
+| description  | `**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)` |
+| contentUrl   | `ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d","0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC` |
+| contentHash  | `0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC` |
+| contentType  | `0`                                                 |
+| size         | `100`                                               |
+| royalties    | `250`                                               |
+| shareholders | `["0x8c4e43e88ba5cb9a15a9F7F74a4d58aD51024389"]`    |
+| shares       | `[1500]`                                            |
+
+```
+"Roberto Lo Giacco","RLG","**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)","ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d","0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC","0","100","250",["0x8c4e43e88ba5cb9a15a9F7F74a4d58aD51024389"],[1500]
+```
+
+### Address
+
+Rinkeby: `0x3b09e54450C7dA5B7f0553d47a2Ec3Ec56Aa1056` [OpenSea collection](https://testnets.opensea.io/collection/roberto-lo-giacco)
