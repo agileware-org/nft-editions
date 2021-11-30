@@ -68,7 +68,7 @@ contract EditionMetadata is MetadataHelper {
         } else if (contentType == 1) {
             return string(abi.encodePacked('animation_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
         } else if (contentType == 2) {
-            return string(abi.encodePacked('youtube_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'))
+            return string(abi.encodePacked('youtube_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
         }
         return "";
     }
