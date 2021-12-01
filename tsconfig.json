@@ -1,7 +1,3 @@
-  },
-  "include": ["./scripts", "./test"],
-  "files": ["./hardhat.config.ts"]
-}
 {
   "compilerOptions": {
     "target": "es2018",
@@ -21,6 +17,11 @@
     "./utils",
     "./scripts",
     "./test"
+    "./src/",
     "index.ts"
-  ]
+  ],
+  "exclude": {
+    "node_modules"
+  },
+  "files": ["./hardhat.config.ts"]
 }
