@@ -17,7 +17,7 @@
     "./utils",
     "./scripts",
     "./test"
-    "./src/",
+    "./src",
     "index.ts"
   ],
   "exclude": {
