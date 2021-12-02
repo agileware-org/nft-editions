@@ -47,7 +47,6 @@ contract MintableEditionsFactory {
      * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
-     * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      * @return the address of the editions contract created
      */
@@ -60,15 +59,14 @@ contract MintableEditionsFactory {
         uint8 _contentType,
         uint64 _size,
         uint16 _royalties,
-        address[] memory _shareholders,
-        uint16[] memory _shares
+        MintableEditions.Shares[] memory _shares
     ) external returns (address) {
         require(!contents[_contentHash], "Edition: duplicated content!");
         contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shareholders, _shares);
-        emit CreatedEditions(id, msg.sender, _shareholders, _size, instance);
+        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shares);
+        emit CreatedEditions(id, msg.sender, _shares, _size, instance);
         counter.increment();
         return instance;
     }
@@ -98,5 +96,5 @@ contract MintableEditionsFactory {
      * @param size the number of tokens this editions contract consists of
      * @param contractAddress the address of the contract representing the editions
      */
-    event CreatedEditions(uint256 indexed index, address indexed creator, address[] indexed shareholders, uint256 size, address contractAddress);
+    event CreatedEditions(uint256 indexed index, address indexed creator, MintableEditions.Shares[] indexed shareholders, uint256 size, address contractAddress);
 }

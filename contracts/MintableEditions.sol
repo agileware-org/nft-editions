@@ -31,6 +31,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     event PaymentReleased(address to, uint256 amount);
     event PaymentFailed(address to);
 
+    struct Shares {
+        address payable holder;
+        uint16 bps;
+    }
+
     // token id counter
     CountersUpgradeable.Counter private counter;
 
@@ -62,12 +67,12 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     uint256 public price;
 
     address[] private shareholders;
-    mapping(address => uint16) private shares;
+    mapping(address => uint16) public shares;
     mapping(address => uint256) private witdrawals;
     // balance withdrawn so far
     uint256 private withdrawn;
 
-    constructor(EditionMetadata _metadata) {
+    constructor(EditionMetadata _metadata) initializer {
         metadata = _metadata;
     }
 
@@ -83,7 +88,6 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
-     * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
     function initialize(
@@ -96,8 +100,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         uint8 _contentType,
         uint64 _size,
         uint16 _royalties,
-        address[] memory _shareholders,
-        uint16[] memory _shares
+        Shares[] memory _shares
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
@@ -112,21 +115,19 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
 
         require(_royalties < 10_000, "Royalties too high");
         royalties = _royalties;
-
-        require(_shareholders.length == _shares.length, "Shares and holders mismatch");
         
         uint16 _totalShares;
-        for (uint256 i = 0; i < _shareholders.length; i++) {
-            _addPayee(_shareholders[i], _shares[i]);
-            _totalShares += _shares[i];
+        for (uint256 i = 0; i < _shares.length; i++) {
+            _addPayee(_shares[i].holder, _shares[i].bps);
+            _totalShares += _shares[i].bps;
         }
         require(_totalShares < 10_000, "Shares too high");
-        _addPayee(_owner, 10_000 - _totalShares);
+        _addPayee(payable(_owner), 10_000 - _totalShares);
     }
 
-    function _addPayee(address _account, uint16 _shares) internal {
+    function _addPayee(address payable _account, uint16 _shares) internal {
         require(_account != address(0), "Shareholder is zero address");
-        require(_shares > 0 && _shares < 10_000, "Shares are invalid");
+        require(_shares > 0 && _shares <= 10_000, "Shares are invalid");
         require(shares[_account] == 0, "Shareholder already has shares");
 
         shareholders.push(_account);
