@@ -1,2 +1,5 @@
 ﻿.deps
 contracts/artifacts
+artifacts
+typechain
+node_modules
