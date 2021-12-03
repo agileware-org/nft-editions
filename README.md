@@ -69,21 +69,20 @@ Of any revenues this contract might collect, 15% of it will be given to the _cur
 
 ### Properties
 
-| field        | value                                               |
-|-------------:|:----------------------------------------------------|
-| name         | `Roberto Lo Giacco`                                 |
-| symbol       | `RLG`                                               |
+| field        | value                                                   |
+|-------------:|:--------------------------------------------------------|
+| name         | `Roberto Lo Giacco`                                     |
+| symbol       | `RLG`                                                   |
 | description  | `**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)` |
 | contentUrl   | `ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d","0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC` |
 | contentHash  | `0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC` |
-| contentType  | `0`                                                 |
-| size         | `100`                                               |
-| royalties    | `250`                                               |
-| shareholders | `["0x8c4e43e88ba5cb9a15a9F7F74a4d58aD51024389"]`    |
-| shares       | `[1500]`                                            |
+| contentType  | `0`                                                     |
+| size         | `100`                                                   |
+| royalties    | `250`                                                   |
+| shares       | `[["0x8c4e43e88ba5cb9a15a9F7F74a4d58aD51024389",1500]]` |
 
 ```
-"Roberto Lo Giacco","RLG","**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)","ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d","0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC","0","100","250",["0x8c4e43e88ba5cb9a15a9F7F74a4d58aD51024389"],[1500]
+"Roberto Lo Giacco","RLG","**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)","ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d","0x94DB57416B770A06B3B2123531E68D67E9D96872F453FA77BC413E9E53FC1BFC","0","100","250",[["0x8c4e43e88ba5cb9a15a9F7F74a4d58aD51024389",1500]]
 ```
 
 ### Address
