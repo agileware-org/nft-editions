@@ -181,7 +181,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /**
      * This operation attempts to transfer part of the contract balance to the provided shareholder based on its shares and previous witdrawals.
      *
-     * @param a valid shareholder address
+     * @param _account a valid shareholder address
      */
     function withdraw(address payable _account) external returns (uint256) {
         uint256 _totalReceived = address(this).balance + withdrawn;
