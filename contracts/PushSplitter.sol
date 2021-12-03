@@ -8,16 +8,18 @@
 pragma solidity 0.8.6;
 
 //import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+//import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "./ISplitter.sol";
 
 contract PushSplitter is Initializable, ISplitter {
     address[] internal _payees;
     mapping(address => uint16) internal _shares;
+    
+    constructor() initializer { }
     
     function initialize(address[] memory payees, uint256[] memory shares) public override initializer {
         require(payees.length == shares.length, "Splitter: inputs length mismatch");

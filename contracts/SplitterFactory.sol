@@ -9,17 +9,17 @@
 pragma solidity 0.8.6;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 import "./ISplitter.sol";
 import "./PushSplitter.sol";
 import "./ShakeableSplitter.sol";
 
 contract SplitterFactory  {
-    using Counters for Counters.Counter;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
-    Counters.Counter internal _counter;
+    CountersUpgradeable.Counter internal _counter;
 
     // Address for implementation of ISplitter contract to clone
     address immutable private _implementation;
