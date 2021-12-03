@@ -19,33 +19,33 @@ contract SplitterFactory  {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
-    CountersUpgradeable.Counter internal _counter;
+    CountersUpgradeable.Counter internal counter;
 
     // Address for implementation of ISplitter contract to clone
-    address immutable private _implementation;
+    address immutable private implementation;
 
     /**
      * Initializes the factory with the address of the implementation contract template
      * 
-     * @param implementation Edition implementation contract to clone
+     * @param _implementation Edition implementation contract to clone
      */
-    constructor(address implementation) {
-        _implementation = implementation;
+    constructor(address _implementation) {
+        implementation = _implementation;
     }
 
     /**
      * Creates a new splitter contract as a factory with a deterministic address, returning the address of the newly created splitter contract.
      * Returns the id of the created splitter contract.
      * 
-     * @param payees list of addresses receiving a share 
-     * @param shares list shares in bps, one per each address
+     * @param _payees list of addresses receiving a share 
+     * @param _shares list shares in bps, one per each address
      */
-    function create(address[] memory payees, uint256[] memory shares) external returns (address payable) {
-        uint256 id = _counter.current();
-        address payable instance = payable(ClonesUpgradeable.cloneDeterministic(_implementation, bytes32(abi.encodePacked(id))));
-        ISplitter(instance).initialize(payees,shares);
-        emit CreatedSplitter(id, msg.sender, payees, instance);
-        _counter.increment();
+    function create(address[] memory _payees, uint256[] memory _shares) external returns (address payable) {
+        uint256 id = counter.current();
+        address payable instance = payable(ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id))));
+        ISplitter(instance).initialize(_payees, _shares);
+        emit CreatedSplitter(id, msg.sender, _payees, instance);
+        counter.increment();
         return instance;
     }
 
@@ -56,14 +56,14 @@ contract SplitterFactory  {
      * @return the Splitter payment contract
      */
     function get(uint256 index) external view returns (ISplitter) {
-        return ISplitter(payable(ClonesUpgradeable.predictDeterministicAddress(_implementation, bytes32(abi.encodePacked(index)), address(this))));
+        return ISplitter(payable(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this))));
     }
 
     /**
      * @return the number of splitter instances released so far
      */
     function instances() external view returns (uint256) {
-        return _counter.current();
+        return counter.current();
     }
 
     /**

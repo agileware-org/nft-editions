@@ -17,21 +17,21 @@ contract MintableEditionsFactory {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
-    CountersUpgradeable.Counter internal _counter;
+    CountersUpgradeable.Counter internal counter;
 
     // Address for implementation of Edition contract to clone
-    address private _implementation;
+    address private implementation;
 
     // Store for hash codes of editions contents: used to prevent re-issuing of the same content
-    mapping(bytes32 => bool) private _contents;
+    mapping(bytes32 => bool) private contents;
 
     /**
      * Initializes the factory with the address of the implementation contract template
      * 
-     * @param implementation Edition implementation contract to clone
+     * @param _implementation Edition implementation contract to clone
      */
-    constructor(address implementation) {
-        _implementation = implementation;
+    constructor(address _implementation) {
+        implementation = _implementation;
     }
 
     /**
@@ -39,35 +39,35 @@ contract MintableEditionsFactory {
      * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which
      * must refer to a content having the same hash.
      * 
-     * @param name name of editions, used in the title as "$name $tokenId/$size"
-     * @param symbol symbol of the tokens mined by this contract
-     * @param description description of tokens of this edition
-     * @param contentUrl content URL of the edition tokens
-     * @param contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
-     * @param contentType type of tokens content [0=image, 1=animation/video/audio]
-     * @param size number of NFTs that can be minted from this contract: set to 0 for unbound
-     * @param royalties perpetual royalties paid to the creator upon token selling
-     * @param shares array of tuples of [address, bps] destined to the shareholders
+     * @param _name name of editions, used in the title as "$name $tokenId/$size"
+     * @param _symbol symbol of the tokens mined by this contract
+     * @param _description description of tokens of this edition
+     * @param _contentUrl content URL of the edition tokens
+     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
+     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
+     * @param _royalties perpetual royalties paid to the creator upon token selling
+     * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      * @return the address of the editions contract created
      */
     function create(
-        string memory name,
-        string memory symbol,
-        string memory description,
-        string memory contentUrl,
-        bytes32 contentHash,
-        uint8 contentType,
-        uint64 size,
-        uint16 royalties,
-        MintableEditions.Shares[] memory shares
+        string memory _name,
+        string memory _symbol,
+        string memory _description,
+        string memory _contentUrl,
+        bytes32 _contentHash,
+        uint8 _contentType,
+        uint64 _size,
+        uint16 _royalties,
+        MintableEditions.Shares[] memory _shares
     ) external returns (address) {
-        require(!_contents[contentHash], "Edition: duplicated content!");
-        _contents[contentHash] = true;
-        uint256 id = _counter.current();
-        address instance = ClonesUpgradeable.cloneDeterministic(_implementation, bytes32(abi.encodePacked(id)));
-        MintableEditions(instance).initialize(msg.sender, name, symbol, description, contentUrl, contentHash, contentType, size, royalties, shares);
-        emit CreatedEditions(id, msg.sender, shares, size, instance);
-        _counter.increment();
+        require(!contents[_contentHash], "Edition: duplicated content!");
+        contents[_contentHash] = true;
+        uint256 id = counter.current();
+        address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
+        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shares);
+        emit CreatedEditions(id, msg.sender, _shares, _size, instance);
+        counter.increment();
         return instance;
     }
 
@@ -78,14 +78,14 @@ contract MintableEditionsFactory {
      * @return the editions contract
      */
     function get(uint256 index) external view returns (MintableEditions) {
-        return MintableEditions(ClonesUpgradeable.predictDeterministicAddress(_implementation, bytes32(abi.encodePacked(index)), address(this)));
+        return MintableEditions(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this)));
     }
 
     /** 
      * @return the number of edition contracts created so far through this factory
      */
      function instances() external view returns (uint256) {
-        return _counter.current();
+        return counter.current();
     }
 
     /**

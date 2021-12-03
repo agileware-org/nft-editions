@@ -37,110 +37,108 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     // token id counter
-    CountersUpgradeable.Counter private _counter;
+    CountersUpgradeable.Counter private counter;
 
     // token description
-    string public _description;
+    string public description;
 
     // token content URL
-    string public _contentUrl;
+    string public contentUrl;
     // hash for the associated content
-    bytes32 public _contentHash;
-
+    bytes32 public contentHash;
     // type of content
-    uint8 internal _contentType;
+    uint8 internal contentType;
     
     // the number of editions this contract can mint
-    uint64 public _size;
+    uint64 public size;
     
     // royalties ERC2981 in bps
-    uint8 internal _royaltiesType;
-    uint16 public _royalties;
+    uint8 internal royaltiesType;
+    uint16 public royalties;
 
     
     // NFT rendering logic
-    EditionMetadata private immutable _metadata;
+    EditionMetadata private immutable metadata;
 
     // addresses allowed to mint editions
-    mapping(address => uint16) internal _allowedMinters;
+    mapping(address => uint16) internal allowedMinters;
 
     // price for sale
-    uint256 public _price;
+    uint256 public price;
 
-    // shares
-    address[] private _shareholders;
-    mapping(address => uint16) public _shares;
-    mapping(address => uint256) private _witdrawals;
+    address[] private shareholders;
+    mapping(address => uint16) public shares;
+    mapping(address => uint256) private witdrawals;
     // balance withdrawn so far
-    uint256 private _withdrawn;
+    uint256 private withdrawn;
 
-    constructor(EditionMetadata metadata) initializer {
-        _metadata = metadata;
+    constructor(EditionMetadata _metadata) initializer {
+        metadata = _metadata;
     }
 
     /**
      * Creates a new edition and sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later.
      * 
      * @param _owner can authorize, mint, gets royalties and a dividend of sales, can update the content URL.
-     * @param name name of editions, used in the title as "$name $tokenId/$size"
-     * @param symbol symbol of the tokens mined by this contract
-     * @param description description of tokens of this edition
-     * @param contentUrl content URL of the edition tokens
-     * @param contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
-     * @param contentType type of tokens content [0=image, 1=animation/video/audio]
-     * @param size number of NFTs that can be minted from this contract: set to 0 for unbound
-     * @param royalties perpetual royalties paid to the creator upon token selling
-     * @param shares shares in bps destined to the shareholders (one per each shareholder)
+     * @param _name name of editions, used in the title as "$name $tokenId/$size"
+     * @param _symbol symbol of the tokens mined by this contract
+     * @param _description description of tokens of this edition
+     * @param _contentUrl content URL of the edition tokens
+     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
+     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
+     * @param _royalties perpetual royalties paid to the creator upon token selling
+     * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
     function initialize(
         address _owner,
-        string memory name,
-        string memory symbol,
-        string memory description,
-        string memory contentUrl,
-        bytes32 contentHash,
-        uint8 contentType,
-        uint64 size,
-        uint16 royalties,
-        Shares[] memory shares
+        string memory _name,
+        string memory _symbol,
+        string memory _description,
+        string memory _contentUrl,
+        bytes32 _contentHash,
+        uint8 _contentType,
+        uint64 _size,
+        uint16 _royalties,
+        Shares[] memory _shares
     ) public initializer {
-        __ERC721_init(name, symbol);
+        __ERC721_init(_name, _symbol);
         __Ownable_init();
 
         transferOwnership(_owner); // set ownership
-        _description = description;
-        _contentUrl = contentUrl;
-        _contentHash = contentHash;
-        _contentType = contentType;
-        _size = size;
-        _counter.increment(); // token ids start at 1
+        description = _description;
+        contentUrl = _contentUrl;
+        contentHash = _contentHash;
+        contentType = _contentType;
+        size = _size;
+        counter.increment(); // token ids start at 1
 
-        require(royalties < 10_000, "Royalties too high");
-        _royalties = royalties;
+        require(_royalties < 10_000, "Royalties too high");
+        royalties = _royalties;
         
-        uint16 totalShares;
-        for (uint256 i = 0; i < shares.length; i++) {
-            _addPayee(shares[i].holder, shares[i].bps);
-            totalShares += shares[i].bps;
+        uint16 _totalShares;
+        for (uint256 i = 0; i < _shares.length; i++) {
+            _addPayee(_shares[i].holder, _shares[i].bps);
+            _totalShares += _shares[i].bps;
         }
-        require(totalShares < 10_000, "Shares too high");
-        _addPayee(payable(_owner), 10_000 - totalShares);
+        require(_totalShares < 10_000, "Shares too high");
+        _addPayee(payable(_owner), 10_000 - _totalShares);
     }
 
-    function _addPayee(address payable account, uint16 shares) internal {
-        require(account != address(0), "Shareholder is zero address");
-        require(shares > 0 && shares <= 10_000, "Shares are invalid");
-        require(_shares[account] == 0, "Shareholder already has shares");
+    function _addPayee(address payable _account, uint16 _shares) internal {
+        require(_account != address(0), "Shareholder is zero address");
+        require(_shares > 0 && _shares <= 10_000, "Shares are invalid");
+        require(shares[_account] == 0, "Shareholder already has shares");
 
-        _shareholders.push(account);
-        _shares[account] = shares;
+        shareholders.push(_account);
+        shares[_account] = _shares;
     }
 
     /**
      * Returns the number of tokens minted so far 
      */
      function totalSupply() public view returns (uint256) {
-        return _counter.current() - 1;
+        return counter.current() - 1;
     }
 
     /**
@@ -148,11 +146,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * This operation is open to everyone as soon as the salePrice is set to a non-zero value.
      */
     function purchase() external payable returns (uint256) {
-        require(_price > 0, "Not for sale");
-        require(msg.value == _price, "Wrong price");
+        require(price > 0, "Not for sale");
+        require(msg.value == price, "Wrong price");
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
-        emit EditionSold(_price, msg.sender);
+        emit EditionSold(price, msg.sender);
         return _mintEditions(toMint);
     }
 
@@ -160,53 +158,51 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * This operation sets the sale price, thus allowing anyone to acquire a token from this edition at the sale price via the purchase operation.
      * Setting the sale price to 0 prevents purchase of the tokens which is then allowed only to permitted addresses.
      * 
-     * @param price sale price in WEI, if set to 0, no sale is allowed, otherwise the provided amount of WEI is needed to start the sale.
+     * @param _wei if sale price is 0, no sale is allowed, otherwise the provided amount of WEI is needed to start the sale.
      */
-    function setPrice(uint256 price) external onlyOwner {
-        _price = price;
-        emit PriceChanged(_price);
+    function setPrice(uint256 _wei) external onlyOwner {
+        price = _wei;
+        emit PriceChanged(price);
     }
 
     /**
      * This operation transfers all ETHs from the contract balance to the shareholders.
      */
     function withdraw() external {
-        for (uint i = 0; i < _shareholders.length; i++) {
-            try this.withdraw(payable(_shareholders[i])) returns (uint256 payment) {
-                emit PaymentReleased(_shareholders[i], payment);
+        for (uint i = 0; i < shareholders.length; i++) {
+            try this.withdraw(payable(shareholders[i])) returns (uint256 payment) {
+                emit PaymentReleased(shareholders[i], payment);
             } catch {
-                emit PaymentFailed(_shareholders[i]);
+                emit PaymentFailed(shareholders[i]);
             }
         }
     }
 
     /**
      * This operation attempts to transfer part of the contract balance to the provided shareholder based on its shares and previous witdrawals.
-     *
-     * @param account the address of a valid shareholder
      */
-    function withdraw(address payable account) external returns (uint256) {
-        uint256 totalReceived = address(this).balance + _withdrawn;
-        uint256 amount = (totalReceived * _shares[account]) / 10_000 - _witdrawals[account];
-        require(amount != 0, "Account is not due payment");
-        _witdrawals[account] += amount;
-        _withdrawn += amount;
-        AddressUpgradeable.sendValue(account, amount);
-        return amount;
+    function withdraw(address payable _account) external returns (uint256) {
+        uint256 _totalReceived = address(this).balance + withdrawn;
+        uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
+        require(_amount != 0, "Account is not due payment");
+        witdrawals[_account] += _amount;
+        withdrawn += _amount;
+        AddressUpgradeable.sendValue(_account, _amount);
+        return _amount;
     }
 
     /**
      * Internal: checks if the msg.sender is allowed to mint.
      */
     function _isAllowedToMint() internal view returns (bool) {
-        return (owner() == msg.sender) || _isPublicAllowed() || (_allowedMinters[msg.sender] > 0);
+        return (owner() == msg.sender) || _isPublicAllowed() || (allowedMinters[msg.sender] > 0);
     }
     
     /**
      * Internal: checks if the ZeroAddress is allowed to mint.
      */
     function _isPublicAllowed() internal view returns (bool) {
-        return (_allowedMinters[address(0x0)] > 0);
+        return (allowedMinters[address(0x0)] > 0);
     }
 
     /**
@@ -217,7 +213,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
         if (owner() != msg.sender && !_isPublicAllowed()) {
-            _allowedMinters[msg.sender] = _allowedMinters[msg.sender] - 1;
+            allowedMinters[msg.sender] = --allowedMinters[msg.sender];
         }
         return _mintEditions(toMint);
     }
@@ -250,23 +246,23 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @param allowed uint16 how many tokens this address is allowed to mint, 0 disables minting
      */
     function setApprovedMinter(address minter, uint16 allowed) public onlyOwner {
-        _allowedMinters[minter] = allowed;
+        allowedMinters[minter] = allowed;
     }
 
     /**
      * Allows for updates of edition urls by the owner of the edition.
      * Only URLs can be updated (data-uris are supported), hashes cannot be updated.
      */
-    function updateEditionURL(string memory contentUrl) public onlyOwner {
-        _contentUrl = contentUrl;
+    function updateEditionURL(string memory _contentUrl) public onlyOwner {
+        contentUrl = _contentUrl;
     }
 
     /** 
      * Returns the number of tokens still available for minting (uint64 when open edition)
      */
     function numberCanMint() public view override returns (uint256) {
-        // edition id is one-indexed
-        return (_size == 0) ? type(uint64).max - 1 : _size - _counter.current() + 1;
+        // atEditionId is one-indexed hence the need to remove one here
+        return size + 1 - counter.current();
     }
 
     /**
@@ -284,14 +280,14 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Called by the public edition minting functions.
      */
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
-        uint64 startAt = uint64(_counter.current());
+        uint64 startAt = uint64(counter.current());
         uint64 endAt = uint64(startAt + recipients.length - 1);
-        require(_size == 0 || endAt <= _size, "Sold out");
-        while (_counter.current() <= endAt) {
-            _mint(recipients[_counter.current() - startAt], _counter.current());
-            _counter.increment();
+        require(size == 0 || endAt <= size, "Sold out");
+        while (counter.current() <= endAt) {
+            _mint(recipients[counter.current() - startAt], counter.current());
+            counter.increment();
         }
-        return _counter.current();
+        return counter.current();
     }
 
     /**
@@ -299,7 +295,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @return contentUrl, contentHash
      */
     function getURI() public view returns (string memory, bytes32) {
-        return (_contentUrl, _contentHash);
+        return (contentUrl, contentHash);
     }
 
     /**
@@ -310,7 +306,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "No token");
-        return _metadata.createTokenURI(name(), _description, _contentUrl, _contentType, tokenId, _size);
+        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, size);
     }
     
      /**
@@ -321,7 +317,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         if (owner() == address(0x0)) {
             return (owner(), 0);
         }
-        return (owner(), (_value * _royalties) / 10_000);
+        return (owner(), (_value * royalties) / 10_000);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
