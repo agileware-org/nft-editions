@@ -269,7 +269,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      */
     function mintable() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
-        return ((size == 0) ? type(uint64).max : size) + 1 - counter.current();
+        return ((size == 0) ? type(uint64).max : size + 1) - counter.current();
     }
 
     /**
