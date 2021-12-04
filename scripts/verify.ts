@@ -18,6 +18,10 @@ async function main() {
   await verify('EditionMetadata', []);
   await verify('MintableEditions', [await (await get('EditionMetadata')).address]);
   await verify('MintableEditionsFactory', [await (await get('MintableEditions')).address]);
+  await verify('PushSplitter', []);
+  await verify('ShakeableSplitter', []);
+  await verify('SplitterFactory', [await (await get('PushSplitter')).address]);
+  await verify('SplitterFactory', [await (await get('ShakeableSplitter')).address]);
 }
 
 main()
