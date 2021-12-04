@@ -47,11 +47,8 @@ contract EditionMetadata is MetadataHelper {
         if (size > 0) {
             sizeText = abi.encodePacked("/", numberToString(size));
         }
-        return abi.encodePacked('{"name":"', name, " ", numberToString(tokenOfEdition), sizeText, '","',
-                'description":"', description, '","',
-                mediaData,
-                'properties":{"number":', numberToString(tokenOfEdition), ',"name":"', name, '"}}'
-            );
+        return abi.encodePacked('{"name":"', name, " ", numberToString(tokenOfEdition), sizeText, '","description":"', description, '","',
+                mediaData, 'properties":{"number":', numberToString(tokenOfEdition), ',"name":"', name, '"}}');
     }
 
     /** 
