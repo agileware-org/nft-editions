@@ -282,12 +282,10 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Called by the public edition minting functions.
      */
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
-        uint64 startAt = uint64(counter.current());
-        uint64 endAt = uint64(startAt + recipients.length - 1);
-        require(size == 0 || endAt <= size, "Sold out");
-        while (counter.current() <= endAt) {
-            _mint(recipients[counter.current() - startAt], counter.current());
-            counter.increment();
+        require(size == 0 || size >= uint64(uint64(counter.current()) + recipients.length  - 1), "Sold out");
+        for (uint i = 0; i < recipients.length; i++) {
+            _mint(recipients[i], counter.current());
+             counter.increment();
         }
         return counter.current();
     }
