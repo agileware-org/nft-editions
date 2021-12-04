@@ -17,7 +17,8 @@
     "deploy": "hardhat deploy",
     "test": "hardhat test",
     "build": "yarn run prepack",
-    "prepack": "hardhat compile"
+    "prepack": "hardhat compile",
+    "verify": "hardhat run scripts/verify.ts"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
