@@ -15,6 +15,8 @@ contract ShakeableSplitter is PaymentSplitterUpgradeable, ISplitter  {
     event PaymentFailed(address to);
     uint256 payees;
 
+    constructor() initializer { }
+
     function initialize(address[] memory _payees, uint256[] memory _shares) public override initializer {
         __PaymentSplitter_init(_payees, _shares);
         payees = _payees.length;

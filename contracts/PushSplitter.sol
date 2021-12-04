@@ -7,11 +7,9 @@
  */
 pragma solidity 0.8.6;
 
-//import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-//import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import "./ISplitter.sol";
 
@@ -51,7 +49,7 @@ contract PushSplitter is Initializable, ISplitter {
         uint256 value = address(this).balance;
         for (uint i = 0; i < payees.length; i++) {
             uint256 amount = value * shares[payees[i]] / 10_000;
-            AddressUpgradeable.sendValue(payable(payees[i]), amount);
+            Address.sendValue(payable(payees[i]), amount);
         }
     }
 }
