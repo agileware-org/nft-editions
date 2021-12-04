@@ -210,12 +210,12 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /**
      * If caller is listed as an allowed minter, mints one NFT for him.
      */
-    function mintEdition() external override returns (uint256) {
+    function mint() external override returns (uint256) {
         require(_isAllowedToMint(), "Minting not allowed");
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
         if (owner() != msg.sender && !_isPublicAllowed()) {
-            allowedMinters[msg.sender] = --allowedMinters[msg.sender];
+            allowedMinters[msg.sender]--;
         }
         return _mintEditions(toMint);
     }
@@ -226,7 +226,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * 
      * @param recipients list of addresses to send the newly minted tokens to
      */
-    function mintEditions(address[] memory recipients) external onlyOwner override returns (uint256) {
+    function mintAndTransfer(address[] memory recipients) external override returns (uint256) {
+        require(_isAllowedToMint(), "Minting not allowed");
+        if (owner() != msg.sender && !_isPublicAllowed()) {
+            allowedMinters[msg.sender] = allowedMinters[msg.sender] - uint16(recipients.length);
+        }
         return _mintEditions(recipients);
     }
 
@@ -262,9 +266,9 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /** 
      * Returns the number of tokens still available for minting (uint64 when open edition)
      */
-    function numberCanMint() public view override returns (uint256) {
+    function mintable() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
-        return size + 1 - counter.current();
+        return ((size == 0) ? type(uint64).max : size) + 1 - counter.current();
     }
 
     /**

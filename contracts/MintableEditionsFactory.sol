@@ -61,7 +61,7 @@ contract MintableEditionsFactory {
         uint16 _royalties,
         MintableEditions.Shares[] memory _shares
     ) external returns (address) {
-        require(!contents[_contentHash], "Edition: duplicated content!");
+        require(!contents[_contentHash], "Duplicated content");
         contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
