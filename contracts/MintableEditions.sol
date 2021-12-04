@@ -46,17 +46,15 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     string public contentUrl;
     // hash for the associated content
     bytes32 public contentHash;
-    // type of content
-    uint8 internal contentType;
+    // token thumbnail URL, for animated content only
+    string public thumbnailUrl;
     
     // the number of editions this contract can mint
     uint64 public size;
     
     // royalties ERC2981 in bps
-    uint8 internal royaltiesType;
     uint16 public royalties;
 
-    
     // NFT rendering logic
     EditionMetadata private immutable metadata;
 
@@ -66,11 +64,13 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     // price for sale
     uint256 public price;
 
+    // contract shareholders and shares information
     address[] private shareholders;
     mapping(address => uint16) public shares;
-    mapping(address => uint256) private witdrawals;
-    // balance withdrawn so far
+
+    // shares withdrawals
     uint256 private withdrawn;
+    mapping(address => uint256) private witdrawals;
 
     constructor(EditionMetadata _metadata) initializer {
         metadata = _metadata;
@@ -81,11 +81,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * 
      * @param _owner can authorize, mint, gets royalties and a dividend of sales, can update the content URL.
      * @param _name name of editions, used in the title as "$name $tokenId/$size"
-     * @param _symbol symbol of the tokens mined by this contract
-     * @param _description description of tokens of this edition
-     * @param _contentUrl content URL of the edition tokens
-     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
-     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _symbol symbol of the tokens minted by this contract
+     * @param _description description of token editions
+     * @param _contentUrl content URL of the token editions
+     * @param _contentHash SHA256 of the token editions content in bytes32 format (0xHASH)
+     * @param _thumbnailUrl optional token editions content thumbnail URL, for animated content only
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
@@ -97,7 +97,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint8 _contentType,
+        string memory _thumbnailUrl,
         uint64 _size,
         uint16 _royalties,
         Shares[] memory _shares
@@ -109,7 +109,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         description = _description;
         contentUrl = _contentUrl;
         contentHash = _contentHash;
-        contentType = _contentType;
+        thumbnailUrl = _thumbnailUrl;
         size = _size;
         counter.increment(); // token ids start at 1
 
@@ -259,8 +259,9 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Allows for updates of edition urls by the owner of the edition.
      * Only URLs can be updated (data-uris are supported), hashes cannot be updated.
      */
-    function updateEditionURL(string memory _contentUrl) public onlyOwner {
+    function updateEditionsURLs(string memory _contentUrl, string memory _thumbnailUrl) public onlyOwner {
         contentUrl = _contentUrl;
+        thumbnailUrl = _thumbnailUrl;
     }
 
     /** 
@@ -295,11 +296,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * Get URI and hash for edition NFT
+     * Get URIs and hash for edition NFT
      * @return contentUrl, contentHash
      */
-    function getURI() public view returns (string memory, bytes32) {
-        return (contentUrl, contentHash);
+    function getURI() public view returns (string memory, bytes32, string memory) {
+        return (contentUrl, contentHash, thumbnailUrl);
     }
 
     /**
@@ -309,8 +310,8 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @return base64-encoded json metadata object
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_exists(tokenId), "No token");
-        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, size);
+        require(_exists(tokenId), "Edition doesn't exist");
+        return metadata.createTokenURI(name(), description, contentUrl, thumbnailUrl, tokenId, size);
     }
     
      /**

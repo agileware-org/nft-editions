@@ -22,13 +22,13 @@ contract EditionMetadata is MetadataHelper {
      * 
      * @param name Name of NFT in metadata
      * @param description Description of NFT in metadata
-     * @param contentUrl URL of image to render for edition
-     * @param contentType index of the content type to render for edition
-     * @param tokenOfEdition Token ID for specific token
-     * @param size Size of entire edition to show
+     * @param contentUrl URL of content to render
+     * @param thumbnailUrl optional URL of a thumbnail to render, for animated content only
+     * @param tokenOfEdition unique identifier of a token edition
+     * @param size total count of editions
      */
-    function createTokenURI(string memory name, string memory description, string memory contentUrl, uint8 contentType, uint256 tokenOfEdition, uint256 size) external pure returns (string memory) {
-        string memory _tokenMediaData = tokenMediaData(contentUrl, contentType, tokenOfEdition);
+    function createTokenURI(string memory name, string memory description, string memory contentUrl, string memory thumbnailUrl, uint256 tokenOfEdition, uint256 size) external pure returns (string memory) {
+        string memory _tokenMediaData = tokenMediaData(contentUrl, thumbnailUrl, tokenOfEdition);
         bytes memory json = createMetadata(name, description, _tokenMediaData, tokenOfEdition, size);
         return encodeMetadata(json);
     }
@@ -56,17 +56,18 @@ contract EditionMetadata is MetadataHelper {
      * Combines the media data and metadata
      * 
      * @param contentUrl URL of image to render for edition
-     * @param contentType index of the content type to render for edition
+     * @param thumbnailUrl index of the content type to render for edition
      * @param tokenOfEdition token identifier
      */
-    function tokenMediaData(string memory contentUrl, uint8 contentType, uint256 tokenOfEdition) public pure returns (string memory) {
-        if (contentType == 0) {
-            return string(abi.encodePacked('image":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
-        } else if (contentType == 1) {
-            return string(abi.encodePacked('animation_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
-        } else if (contentType == 2) {
-            return string(abi.encodePacked('youtube_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
+    function tokenMediaData(string memory contentUrl, string memory thumbnailUrl, uint256 tokenOfEdition) public pure returns (string memory) {
+        if (bytes(thumbnailUrl).length == 0) {
+            return string(
+                abi.encodePacked(
+                    'image":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
+        } else {
+            return string(
+                abi.encodePacked(
+                    'image":"', thumbnailUrl, "?id=", numberToString(tokenOfEdition),'","animation_url":"', contentUrl, "?id=", numberToString(tokenOfEdition),'","'));
         }
-        return "";
     }
 }
