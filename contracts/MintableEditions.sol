@@ -29,7 +29,6 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
-    event PaymentReleased(address to, uint256 amount);
     event PaymentFailed(address to);
 
     struct Shares {
@@ -170,8 +169,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      */
     function withdraw() external {
         for (uint i = 0; i < shareholders.length; i++) {
-            try this.withdraw(payable(shareholders[i])) returns (uint256 payment) {
-                emit PaymentReleased(shareholders[i], payment);
+            try this.withdraw(payable(shareholders[i])) returns (uint256) {
             } catch {
                 emit PaymentFailed(shareholders[i]);
             }
@@ -229,6 +227,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     function mintAndTransfer(address[] memory recipients) external override returns (uint256) {
         require(_isAllowedToMint(), "Minting not allowed");
         if (owner() != msg.sender && !_isPublicAllowed()) {
+            require(allowedMinters[msg.sender] >= recipients.length, "Allowance exceeded");
             allowedMinters[msg.sender] = allowedMinters[msg.sender] - uint16(recipients.length);
         }
         return _mintEditions(recipients);
@@ -249,10 +248,10 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * If the allowed amount is set to 0 then the address will NOT be allowed to mint.
      * 
      * @param minter address to set approved minting status for
-     * @param allowed uint16 how many tokens this address is allowed to mint, 0 disables minting
+     * @param allowance uint16 how many tokens this address is allowed to mint, 0 disables minting
      */
-    function setApprovedMinter(address minter, uint16 allowed) public onlyOwner {
-        allowedMinters[minter] = allowed;
+    function setApprovedMinter(address minter, uint16 allowance) public onlyOwner {
+        allowedMinters[minter] = allowance;
     }
 
     /**
