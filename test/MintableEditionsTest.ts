@@ -73,9 +73,21 @@ describe("MintableEditions", function () {
     await expect(await editions.totalSupply()).to.equal(receiverBalance);
   });
 
-  it("Artist can allow minters", async function () {
+  it("Artist only can allow minters", async function () {
     editions.connect(artist);
     await editions.setApprovedMinter(minter.address, 10);
+    await expect(editions.connect(minter).setApprovedMinter(minter.address, 10)).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(purchaser).setApprovedMinter(minter.address, 10)).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(receiver).setApprovedMinter(minter.address, 10)).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Artist only can set sale price", async function () {
+    await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
+      .to.emit(editions, "PriceChanged")
+      .withArgs(ethers.utils.parseEther("1.0"));
+    await expect(editions.connect(minter).setPrice(ethers.utils.parseEther("1.0"))).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(purchaser).setPrice(ethers.utils.parseEther("1.0"))).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(receiver).setPrice(ethers.utils.parseEther("1.0"))).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
   it("Allowed minter can mint for self", async function () {
@@ -126,9 +138,9 @@ describe("MintableEditions", function () {
 
   it("Purchase rejected for incorrect price", async function () {
     await editions.setPrice(ethers.utils.parseEther("1.0"));
-    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0001")}))
+    await expect(editions.connect(artist).purchase({value: ethers.utils.parseEther("1.0001")}))
     .to.be.revertedWith("Wrong price");
-    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("0.9999")}))
+    await expect(editions.connect(minter).purchase({value: ethers.utils.parseEther("0.9999")}))
     .to.be.revertedWith("Wrong price");
     await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("0.0001")}))
     .to.be.revertedWith("Wrong price");
