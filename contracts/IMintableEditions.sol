@@ -6,7 +6,7 @@
  * 
  * Made with 🧡 in Italy by 𝗔𝗴𝗶𝗹𝗲𝗪𝗮𝗿𝗲 (www.agileware.org)
  */
-pragma solidity 0.8.6;
+pragma solidity 0.8.10;
 
 interface IMintableEditions {
     /**
