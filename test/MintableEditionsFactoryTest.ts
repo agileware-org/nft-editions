@@ -20,7 +20,7 @@ describe("MintableEditionsFactory", function () {
     [artist, shareholder] = await ethers.getSigners();
   });
 
-  it("Should emit a CreatedEditions even with a MintableEditions address upon create", async function () {
+  it("Should emit a CreatedEditions event upon create", async function () {
     expect(await factory.instances()).to.be.equal(0);
     const expectedAddress = await factory.get(0);
     await expect(factory.create(
