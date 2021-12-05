@@ -113,7 +113,7 @@ describe("MintableEditions", function () {
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = receiver.address;
     }
-    await expect(await editions.connect(minter).mintAndTransfer(recipients))
+    await expect(editions.connect(minter).mintAndTransfer(recipients))
       .to.be.revertedWith("Allowance exceeded");
   });
 });
