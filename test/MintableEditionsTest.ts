@@ -42,7 +42,7 @@ describe("MintableEditions", function () {
 
   it("Artist can mint for self", async function () {
     editions.connect(artist);
-    await expect(await editions.mint())
+    await expect(editions.mint())
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, artist.address, 1);
 
@@ -52,7 +52,7 @@ describe("MintableEditions", function () {
 
   it("Artist can mint for someone", async function () {
     editions.connect(artist);
-    await expect(await editions.mintAndTransfer([receiver.address]))
+    await expect(editions.mintAndTransfer([receiver.address]))
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, receiver.address, 1);
 
@@ -66,7 +66,7 @@ describe("MintableEditions", function () {
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = receiver.address;
     }
-    await expect(await editions.mintAndTransfer(recipients))
+    await expect(editions.mintAndTransfer(recipients))
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, receiver.address, 1);
     const receiverBalance = await editions.balanceOf(receiver.address);
@@ -79,7 +79,7 @@ describe("MintableEditions", function () {
   });
 
   it("Allowed minter can mint for self", async function () {
-    await expect(await editions.connect(minter).mint())
+    await expect(editions.connect(minter).mint())
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, minter.address, 1);
     const minterBalance = await editions.balanceOf(minter.address);
@@ -87,7 +87,7 @@ describe("MintableEditions", function () {
   });
 
   it("Allowed minter can mint for someone", async function () {
-    await expect(await editions.connect(minter).mintAndTransfer([receiver.address]))
+    await expect(editions.connect(minter).mintAndTransfer([receiver.address]))
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, receiver.address, 1);
     const receiverBalance = await editions.balanceOf(receiver.address);
@@ -95,14 +95,11 @@ describe("MintableEditions", function () {
   });
 
   it("Allowed minter can mint for others within limits", async function () {
-    console.log("artist:" + artist.address);
-    console.log("minter:" + minter.address);
-    //, shareholder, buyer, minter, receiver, purchaser]);
     let recipients = new Array<string>(50);
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = receiver.address;
     }
-    await expect(await editions.connect(minter).mintAndTransfer(recipients))
+    await expect(editions.connect(minter).mintAndTransfer(recipients))
       .to.emit(editions, "Transfer");
     const receiverBalance = await editions.balanceOf(receiver.address);
     await expect(await editions.totalSupply()).to.equal(receiverBalance);
@@ -115,5 +112,30 @@ describe("MintableEditions", function () {
     }
     await expect(editions.connect(minter).mintAndTransfer(recipients))
       .to.be.revertedWith("Allowance exceeded");
+  });
+
+  it("Public can purchase at sale price", async function () {
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+    const purchaserBalance = await editions.balanceOf(purchaser.address);
+    await expect(await editions.totalSupply()).to.equal(purchaserBalance);
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
+  });
+
+  it("Purchase rejected for incorrect price", async function () {
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0001")}))
+    .to.be.revertedWith("Wrong price");
+    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("0.9999")}))
+    .to.be.revertedWith("Wrong price");
+    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("0.0001")}))
+    .to.be.revertedWith("Wrong price");
+  });
+
+  it("Purchase disabled for unset price", async function () {
+    await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
+    .to.be.revertedWith("Not for sale");
   });
 });
