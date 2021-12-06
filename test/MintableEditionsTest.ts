@@ -82,11 +82,22 @@ describe("MintableEditions", function () {
   });
 
   it("Artist only can revoke allowed minters", async function () {
-    expect.fail('Not implemented');
+    editions.connect(artist);
+    await editions.setApprovedMinters([{minter: minter.address, amount: 0}]);
+    await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
+ 
   });
+  
 
   it("Artist only can reduce/increase allowances to minters", async function () {
-    expect.fail('Not implemented');
+    editions.connect(artist);
+    await editions.setApprovedMinters([{minter: minter.address, amount: 51}]);
+    await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 39}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 2}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 60}])).to.be.revertedWith("Ownable: caller is not the owner");
+
   });
 
   it("Artist only can set sale price", async function () {
@@ -134,8 +145,32 @@ describe("MintableEditions", function () {
       .to.be.revertedWith("Allowance exceeded");
   });
   
+   it("Revoked minters cannot mint for self or others", async function () {
+    editions.connect(artist);
+    await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
+    await editions.setApprovedMinters([{minter: minter.address, amount: 0}]);
+    await expect(editions.connect(minter).mint()).to.be.revertedWith("Minting not allowed");
+    await expect(editions.connect(minter).mintAndTransfer([receiver.address])).to.be.revertedWith("Minting not allowed");   
+    await expect(await editions.totalSupply()).to.be.equal(0);
+
+  });
+  
   it("Anyone can mint without limit when zero address is allowed for minting", async function () {
-    expect.fail('Not implemented');
+    editions.connect(artist);
+    await editions.setApprovedMinters([{minter: ethers.constants.AddressZero, amount: 1}]);
+    await expect(editions.connect(minter).mint())
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, minter.address, 1);
+      await expect(editions.connect(minter).mintAndTransfer([receiver.address]))
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, receiver.address, 2);
+      await expect(editions.connect(purchaser).mint())
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, purchaser.address, 3);
+      await expect(editions.connect(receiver).mint())
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, receiver.address, 4);
+    await expect(await editions.totalSupply()).to.be.equal(4);
   });
 
   it("Anyone can purchase at sale price", async function () {
