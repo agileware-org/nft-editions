@@ -28,17 +28,9 @@
     "skipLibCheck": true
   },
   "include": [
-<<<<<<< HEAD
-    
-    
-    
-    
-    "./src",
-    
-=======
     "./src",
     "./test"
->>>>>>> f3a0095a2e889033575f180f54b1a30c5c904fcb
+
   ],
   "exclude": [
     "node_modules"
