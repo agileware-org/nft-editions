@@ -6,7 +6,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deploy, get} = deployments;
   const {deployer} = await getNamedAccounts();
 
-  const metadataHelper = await get('EditionMetadata');
+  const metadataHelper = await get('EditionsMetadataHelper');
   const deployed = await deploy('MintableEditions', {
     from: deployer,
     log: true,
@@ -14,4 +14,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
 };
 export default func;
-func.dependencies = ['EditionMetadata'];
+func.dependencies = ['EditionsMetadataHelper'];
