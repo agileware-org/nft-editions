@@ -89,3 +89,17 @@ Of any revenues this contract might collect, 15% of it will be given to the _cur
 ### Address
 
 Rinkeby: `0x3b09e54450C7dA5B7f0553d47a2Ec3Ec56Aa1056` [OpenSea collection](https://testnets.opensea.io/collection/roberto-lo-giacco)
+
+## Deploy
+
+```
+npm run deploy -- --network rinkeby --export networks/rinkeby.json
+npm run verify -- --network rinkeby
+```
+
+or
+
+```
+npx hardhat deploy --network rinkeby --export networks/rinkeby.json
+npx hardhat run scripts/verify.ts --network rinkeby
+```
