@@ -15,8 +15,8 @@ async function verify(contract:string, args: any[]) {
 }
 
 async function main() {
-  await verify('EditionMetadata', []);
-  await verify('MintableEditions', [await (await get('EditionMetadata')).address]);
+  await verify('EditionsMetadataHelper', []);
+  await verify('MintableEditions', [await (await get('EditionsMetadataHelper')).address]);
   await verify('MintableEditionsFactory', [await (await get('MintableEditions')).address]);
   await verify('PushSplitter', []);
   await verify('ShakeableSplitter', []);

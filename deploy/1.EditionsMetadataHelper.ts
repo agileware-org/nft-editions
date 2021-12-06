@@ -6,7 +6,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deploy, get} = deployments;
   const {deployer} = await getNamedAccounts();
 
-  const deployed = await deploy('EditionMetadata', {
+  const deployed = await deploy('EditionsMetadataHelper', {
     from: deployer,
     log: true,
   });

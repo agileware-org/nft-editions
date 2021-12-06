@@ -14,7 +14,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-import "./EditionMetadata.sol";
+import "./EditionsMetadataHelper.sol";
 import "./IMintableEditions.sol";
 
 /**
@@ -60,7 +60,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     uint16 public royalties;
 
     // NFT rendering logic
-    EditionMetadata private immutable metadata;
+    EditionsMetadataHelper private immutable metadata;
 
     // addresses allowed to mint editions
     mapping(address => uint16) internal allowedMinters;
@@ -76,7 +76,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     uint256 private withdrawn;
     mapping(address => uint256) private witdrawals;
 
-    constructor(EditionMetadata _metadata) initializer {
+    constructor(EditionsMetadataHelper _metadata) initializer {
         metadata = _metadata;
     }
 
