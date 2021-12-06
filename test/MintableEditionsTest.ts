@@ -81,6 +81,14 @@ describe("MintableEditions", function () {
     await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 50}])).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
+  it("Artist only can revoke allowed minters", async function () {
+    expect.fail('Not implemented');
+  });
+
+  it("Artist only can reduce/increase allowances to minters", async function () {
+    expect.fail('Not implemented');
+  });
+
   it("Artist only can set sale price", async function () {
     await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
       .to.emit(editions, "PriceChanged")
@@ -124,6 +132,10 @@ describe("MintableEditions", function () {
     }
     await expect(editions.connect(minter).mintAndTransfer(recipients))
       .to.be.revertedWith("Allowance exceeded");
+  });
+  
+  it("Anyone can mint without limit when zero address is allowed for minting", async function () {
+    expect.fail('Not implemented');
   });
 
   it("Anyone can purchase at sale price", async function () {
