@@ -28,12 +28,12 @@
     "skipLibCheck": true
   },
   "include": [
-    "./typechain",
-    "./utils",
-    "./scripts",
-    "./test",
+    
+    
+    
+    
     "./src",
-    "index.ts"
+    
   ],
   "exclude": [
     "node_modules"
