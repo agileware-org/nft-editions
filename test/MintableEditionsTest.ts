@@ -150,4 +150,76 @@ describe("MintableEditions", function () {
     await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
     .to.be.revertedWith("Not for sale");
   });
+
+  it("Artist only can update content URL, but only to non empty value", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Artist only can update thumbnail URL, also to empty value", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Artist only can approveForAll", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Artist can withdraw its shares", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Artist without pending payment cannot withdraw", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Artist withdrawing multiple times respect its global shares", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Shareholders can withdraw their shares", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Shareholders without pending payment cannot withdraw", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Shareholders withdrawing multiple times respect their global shares", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Artist and shareholders only can withdraw", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("Anyone can shake the contract", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("ERC-721: totalSupply increases upon minting", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("ERC-721: token ownership", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("ERC-721: token approval", async function () { 
+    expect.fail('Not implemented');
+  });
+
+  it("ERC-721: token burn", async function () { 
+    expect.fail('Not implemented');
+  });
+  
+  it("ERC-721: token URI (static content)", async function () { 
+    expect.fail('Not implemented');
+  });
+  
+  it("ERC-721: token URI (animated content)", async function () { 
+    expect.fail('Not implemented');
+  });
+  
+  it("ERC-2981: royaltyInfo", async function () { 
+    expect.fail('Not implemented');
+  });
 });
