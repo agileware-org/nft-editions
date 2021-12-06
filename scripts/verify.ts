@@ -1,4 +1,5 @@
 import { run, deployments } from "hardhat";
+import { NomicLabsHardhatPluginError } from "hardhat/plugins";
 
 const {get} = deployments;
 
@@ -10,7 +11,7 @@ async function verify(contract:string, args: any[]) {
       constructorArguments: args,
     })
   } catch (e) {
-    console.log(e);
+    console.log((e instanceof Error) ? e.message : "ERROR: " + e);
   }
 }
 
