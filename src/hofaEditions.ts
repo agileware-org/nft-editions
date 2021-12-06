@@ -9,14 +9,13 @@ import {
   MintableEditions,
   EditionMetadata
 } from "../typechain";
+
 import { EditionSoldEvent } from "../typechain/MintableEditions";
 
 
 
-
-
-
 export class HofaEditions{
+
 public Emetadata:EditionMetadata
 public Editions:MintableEditions
 public  Factory: MintableEditionsFactory
@@ -31,7 +30,6 @@ public async purchase(editionsId:number ): Promise<number> {
    expect(price).to.not.be.equal("0x0");
  return editions.purchase(values);
      
-    
     
 }
 public async mint(editionsId:number):Promise<number>{
