@@ -35,7 +35,7 @@ describe("MintableEditions", function () {
     for (const event of receipt.events!) {
       if (event.event === "CreatedEditions") {
         editions = (await ethers.getContractAt("MintableEditions", event.args![4])) as MintableEditions;
-        await editions.setApprovedMinter(minter.address, 50);
+        await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
       }
     }
   });
@@ -75,10 +75,10 @@ describe("MintableEditions", function () {
 
   it("Artist only can allow minters", async function () {
     editions.connect(artist);
-    await editions.setApprovedMinter(minter.address, 10);
-    await expect(editions.connect(minter).setApprovedMinter(minter.address, 10)).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(editions.connect(purchaser).setApprovedMinter(minter.address, 10)).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(editions.connect(receiver).setApprovedMinter(minter.address, 10)).to.be.revertedWith("Ownable: caller is not the owner");
+    await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
+    await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 50}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 50}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 50}])).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
   it("Artist only can set sale price", async function () {
@@ -126,7 +126,7 @@ describe("MintableEditions", function () {
       .to.be.revertedWith("Allowance exceeded");
   });
 
-  it("Public can purchase at sale price", async function () {
+  it("Anyone can purchase at sale price", async function () {
     await editions.setPrice(ethers.utils.parseEther("1.0"));
     await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
       .to.emit(editions, "Transfer")
@@ -136,7 +136,7 @@ describe("MintableEditions", function () {
     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
   });
 
-  it("Purchase rejected for incorrect price", async function () {
+  it("Purchases are rejected when value is incorrect", async function () {
     await editions.setPrice(ethers.utils.parseEther("1.0"));
     await expect(editions.connect(artist).purchase({value: ethers.utils.parseEther("1.0001")}))
     .to.be.revertedWith("Wrong price");
@@ -146,7 +146,7 @@ describe("MintableEditions", function () {
     .to.be.revertedWith("Wrong price");
   });
 
-  it("Purchase disabled for unset price", async function () {
+  it("Purchases are disallowed when price is set to zero", async function () {
     await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
     .to.be.revertedWith("Not for sale");
   });

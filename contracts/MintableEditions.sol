@@ -34,6 +34,12 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         address payable holder;
         uint16 bps;
     }
+
+    struct Allowance {
+        address minter;
+        uint16 amount;
+    }
+
     // token id counter
     CountersUpgradeable.Counter private counter;
 
@@ -105,6 +111,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
 
         transferOwnership(_owner); // set ownership
         description = _description;
+        require(bytes(_contentUrl).length > 0, "Empty content URL");
         contentUrl = _contentUrl;
         contentHash = _contentHash;
         thumbnailUrl = _thumbnailUrl;
@@ -166,28 +173,29 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /**
      * This operation transfers all ETHs from the contract balance to the owner and shareholders.
      */
-    function withdraw() external {
+    function shake() external {
         for (uint i = 0; i < shareholders.length; i++) {
-            try this.withdraw(payable(shareholders[i])) returns (uint256) {
-            } catch {
-                emit PaymentFailed(shareholders[i]);
-            }
+            _withdraw(payable(shareholders[i]));
         }
     }
 
+    function withdraw() external {
+        _withdraw(payable(msg.sender));
+    }
+
     /**
-     * This operation attempts to transfer part of the contract balance to the provided shareholder based on its shares and previous witdrawals.
+     * This operation attempts to transfer part of the contract balance to the caller, provided the account is a shareholder and
+     * on the basis of its shares and previous witdrawals.
      *
-     * @param _account a valid shareholder address
+     * @param _account the address of the shareholder to pay out
      */
-    function withdraw(address payable _account) external returns (uint256) {
+    function _withdraw(address payable _account) internal {
         uint256 _totalReceived = address(this).balance + withdrawn;
         uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
         require(_amount != 0, "Account is not due payment");
         witdrawals[_account] += _amount;
         withdrawn += _amount;
         AddressUpgradeable.sendValue(_account, _amount);
-        return _amount;
     }
 
     /**
@@ -233,7 +241,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * Simple override for owner interface.
+     * Returns the owner of the collection of editions.
      */
     function owner() public view override(OwnableUpgradeable, IMintableEditions) returns (address) {
         return super.owner();
@@ -246,11 +254,12 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * to mint any amount of tokens, similarly to setApprovalForAll in the ERC721 spec.
      * If the allowed amount is set to 0 then the address will NOT be allowed to mint.
      * 
-     * @param minter address to set approved minting status for
-     * @param allowance uint16 how many tokens this address is allowed to mint, 0 disables minting
+     * @param allowances tuples of (address, uint16) describing how many tokens an address is allowed to mint, 0 disables minting
      */
-    function setApprovedMinter(address minter, uint16 allowance) public onlyOwner {
-        allowedMinters[minter] = allowance;
+    function setApprovedMinters(Allowance[] memory allowances) public onlyOwner {
+        for (uint i = 0; i < allowances.length; i++) {
+            allowedMinters[allowances[i].minter] = allowances[i].amount;
+        }
     }
 
     /**
@@ -258,6 +267,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Only URLs can be updated (data-uris are supported), hashes cannot be updated.
      */
     function updateEditionsURLs(string memory _contentUrl, string memory _thumbnailUrl) public onlyOwner {
+        require(bytes(_contentUrl).length > 0, "Empty content URL");
         contentUrl = _contentUrl;
         thumbnailUrl = _thumbnailUrl;
     }
@@ -273,7 +283,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /**
      * User burn function for token id.
      * 
-     *  @param tokenId Token ID to burn
+     * @param tokenId token edition identifier to burn
      */
     function burn(uint256 tokenId) public {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Not approved");
@@ -295,6 +305,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
 
     /**
      * Get URIs and hash for edition NFT
+     *
      * @return contentUrl, contentHash
      */
     function getURI() public view returns (string memory, bytes32, string memory) {
@@ -314,6 +325,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     
      /**
       * ERC2981 - Gets royalty information for token
+      *
       * @param _value the sale price for this token
       */
     function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
