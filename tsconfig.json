@@ -1,27 +1,42 @@
 {
   "compilerOptions": {
+    "outDir": "./dist",
     "target": "es2018",
     "module": "commonjs",
     "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "preserveConstEnums": true,
+    "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
-    "strict": false,
+    "rootDir": "./",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "./",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "outDir": "dist",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true
   },
   "include": [
     "./typechain",
     "./utils",
     "./scripts",
-    "./test"
+    "./test",
     "./src",
     "index.ts"
   ],
-  "exclude": {
+  "exclude": [
     "node_modules"
-  },
+  ],
   "files": ["./hardhat.config.ts"]
 }

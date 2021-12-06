@@ -3,10 +3,10 @@
 /**
  * ░█▄█░▄▀▄▒█▀▒▄▀▄░░░▒░░░▒██▀░█▀▄░█░▀█▀░█░▄▀▄░█▄░█░▄▀▀░░░█▄░█▒█▀░▀█▀
  * ▒█▒█░▀▄▀░█▀░█▀█▒░░▀▀▒░░█▄▄▒█▄▀░█░▒█▒░█░▀▄▀░█▒▀█▒▄██▒░░█▒▀█░█▀░▒█▒
- * 
+ *
+ * Made with 🧡 by www.Kreation.tech
  */
-
-pragma solidity 0.8.6;
+pragma solidity 0.8.10;
 
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {IERC2981Upgradeable, IERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
@@ -28,8 +28,17 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
-    event PaymentReleased(address to, uint256 amount);
     event PaymentFailed(address to);
+
+    struct Shares {
+        address payable holder;
+        uint16 bps;
+    }
+
+    struct Allowance {
+        address minter;
+        uint16 amount;
+    }
 
     // token id counter
     CountersUpgradeable.Counter private counter;
@@ -41,17 +50,15 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     string public contentUrl;
     // hash for the associated content
     bytes32 public contentHash;
-    // type of content
-    uint8 internal contentType;
+    // token thumbnail URL, for animated content only
+    string public thumbnailUrl;
     
     // the number of editions this contract can mint
     uint64 public size;
     
     // royalties ERC2981 in bps
-    uint8 internal royaltiesType;
     uint16 public royalties;
 
-    
     // NFT rendering logic
     EditionMetadata private immutable metadata;
 
@@ -61,13 +68,15 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     // price for sale
     uint256 public price;
 
+    // contract shareholders and shares information
     address[] private shareholders;
-    mapping(address => uint16) private shares;
-    mapping(address => uint256) private witdrawals;
-    // balance withdrawn so far
-    uint256 private withdrawn;
+    mapping(address => uint16) public shares;
 
-    constructor(EditionMetadata _metadata) {
+    // shares withdrawals
+    uint256 private withdrawn;
+    mapping(address => uint256) private witdrawals;
+
+    constructor(EditionMetadata _metadata) initializer {
         metadata = _metadata;
     }
 
@@ -76,14 +85,13 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * 
      * @param _owner can authorize, mint, gets royalties and a dividend of sales, can update the content URL.
      * @param _name name of editions, used in the title as "$name $tokenId/$size"
-     * @param _symbol symbol of the tokens mined by this contract
-     * @param _description description of tokens of this edition
-     * @param _contentUrl content URL of the edition tokens
-     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
-     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _symbol symbol of the tokens minted by this contract
+     * @param _description description of token editions
+     * @param _contentUrl content URL of the token editions
+     * @param _contentHash SHA256 of the token editions content in bytes32 format (0xHASH)
+     * @param _thumbnailUrl optional token editions content thumbnail URL, for animated content only
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
-     * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
     function initialize(
@@ -93,40 +101,38 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint8 _contentType,
+        string memory _thumbnailUrl,
         uint64 _size,
         uint16 _royalties,
-        address[] memory _shareholders,
-        uint16[] memory _shares
+        Shares[] memory _shares
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __Ownable_init();
 
         transferOwnership(_owner); // set ownership
         description = _description;
+        require(bytes(_contentUrl).length > 0, "Empty content URL");
         contentUrl = _contentUrl;
         contentHash = _contentHash;
-        contentType = _contentType;
+        thumbnailUrl = _thumbnailUrl;
         size = _size;
         counter.increment(); // token ids start at 1
 
         require(_royalties < 10_000, "Royalties too high");
         royalties = _royalties;
-
-        require(_shareholders.length == _shares.length, "Shares and holders mismatch");
         
         uint16 _totalShares;
-        for (uint256 i = 0; i < _shareholders.length; i++) {
-            _addPayee(_shareholders[i], _shares[i]);
-            _totalShares += _shares[i];
+        for (uint256 i = 0; i < _shares.length; i++) {
+            _addPayee(_shares[i].holder, _shares[i].bps);
+            _totalShares += _shares[i].bps;
         }
         require(_totalShares < 10_000, "Shares too high");
-        _addPayee(_owner, 10_000 - _totalShares);
+        _addPayee(payable(_owner), 10_000 - _totalShares);
     }
 
-    function _addPayee(address _account, uint16 _shares) internal {
+    function _addPayee(address payable _account, uint16 _shares) internal {
         require(_account != address(0), "Shareholder is zero address");
-        require(_shares > 0 && _shares < 10_000, "Shares are invalid");
+        require(_shares > 0 && _shares <= 10_000, "Shares are invalid");
         require(shares[_account] == 0, "Shareholder already has shares");
 
         shareholders.push(_account);
@@ -165,29 +171,31 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * This operation transfers all ETHs from the contract balance to the shareholders.
+     * This operation transfers all ETHs from the contract balance to the owner and shareholders.
      */
-    function withdraw() external {
+    function shake() external {
         for (uint i = 0; i < shareholders.length; i++) {
-            try this.withdraw(payable(shareholders[i])) returns (uint256 payment) {
-                emit PaymentReleased(shareholders[i], payment);
-            } catch {
-                emit PaymentFailed(shareholders[i]);
-            }
+            _withdraw(payable(shareholders[i]));
         }
     }
 
+    function withdraw() external {
+        _withdraw(payable(msg.sender));
+    }
+
     /**
-     * This operation attempts to transfer part of the contract balance to the provided shareholder based on its shares and previous witdrawals.
+     * This operation attempts to transfer part of the contract balance to the caller, provided the account is a shareholder and
+     * on the basis of its shares and previous witdrawals.
+     *
+     * @param _account the address of the shareholder to pay out
      */
-    function withdraw(address payable _account) external returns (uint256) {
+    function _withdraw(address payable _account) internal {
         uint256 _totalReceived = address(this).balance + withdrawn;
         uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
         require(_amount != 0, "Account is not due payment");
         witdrawals[_account] += _amount;
         withdrawn += _amount;
         AddressUpgradeable.sendValue(_account, _amount);
-        return _amount;
     }
 
     /**
@@ -207,12 +215,12 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     /**
      * If caller is listed as an allowed minter, mints one NFT for him.
      */
-    function mintEdition() external override returns (uint256) {
+    function mint() external override returns (uint256) {
         require(_isAllowedToMint(), "Minting not allowed");
         address[] memory toMint = new address[](1);
         toMint[0] = msg.sender;
         if (owner() != msg.sender && !_isPublicAllowed()) {
-            allowedMinters[msg.sender] = --allowedMinters[msg.sender];
+            allowedMinters[msg.sender]--;
         }
         return _mintEditions(toMint);
     }
@@ -223,12 +231,17 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * 
      * @param recipients list of addresses to send the newly minted tokens to
      */
-    function mintEditions(address[] memory recipients) external onlyOwner override returns (uint256) {
+    function mintAndTransfer(address[] memory recipients) external override returns (uint256) {
+        require(_isAllowedToMint(), "Minting not allowed");
+        if (owner() != msg.sender && !_isPublicAllowed()) {
+            require(allowedMinters[msg.sender] >= recipients.length, "Allowance exceeded");
+            allowedMinters[msg.sender] = allowedMinters[msg.sender] - uint16(recipients.length);
+        }
         return _mintEditions(recipients);
     }
 
     /**
-     * Simple override for owner interface.
+     * Returns the owner of the collection of editions.
      */
     function owner() public view override(OwnableUpgradeable, IMintableEditions) returns (address) {
         return super.owner();
@@ -241,33 +254,36 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * to mint any amount of tokens, similarly to setApprovalForAll in the ERC721 spec.
      * If the allowed amount is set to 0 then the address will NOT be allowed to mint.
      * 
-     * @param minter address to set approved minting status for
-     * @param allowed uint16 how many tokens this address is allowed to mint, 0 disables minting
+     * @param allowances tuples of (address, uint16) describing how many tokens an address is allowed to mint, 0 disables minting
      */
-    function setApprovedMinter(address minter, uint16 allowed) public onlyOwner {
-        allowedMinters[minter] = allowed;
+    function setApprovedMinters(Allowance[] memory allowances) public onlyOwner {
+        for (uint i = 0; i < allowances.length; i++) {
+            allowedMinters[allowances[i].minter] = allowances[i].amount;
+        }
     }
 
     /**
      * Allows for updates of edition urls by the owner of the edition.
      * Only URLs can be updated (data-uris are supported), hashes cannot be updated.
      */
-    function updateEditionURL(string memory _contentUrl) public onlyOwner {
+    function updateEditionsURLs(string memory _contentUrl, string memory _thumbnailUrl) public onlyOwner {
+        require(bytes(_contentUrl).length > 0, "Empty content URL");
         contentUrl = _contentUrl;
+        thumbnailUrl = _thumbnailUrl;
     }
 
     /** 
      * Returns the number of tokens still available for minting (uint64 when open edition)
      */
-    function numberCanMint() public view override returns (uint256) {
+    function mintable() public view override returns (uint256) {
         // atEditionId is one-indexed hence the need to remove one here
-        return size + 1 - counter.current();
+        return ((size == 0) ? type(uint64).max : size + 1) - counter.current();
     }
 
     /**
      * User burn function for token id.
      * 
-     *  @param tokenId Token ID to burn
+     * @param tokenId token edition identifier to burn
      */
     function burn(uint256 tokenId) public {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Not approved");
@@ -279,22 +295,21 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Called by the public edition minting functions.
      */
     function _mintEditions(address[] memory recipients) internal returns (uint256) {
-        uint64 startAt = uint64(counter.current());
-        uint64 endAt = uint64(startAt + recipients.length - 1);
-        require(size == 0 || endAt <= size, "Sold out");
-        while (counter.current() <= endAt) {
-            _mint(recipients[counter.current() - startAt], counter.current());
-            counter.increment();
+        require(uint64(mintable()) >= recipients.length, "Sold out");
+        for (uint i = 0; i < recipients.length; i++) {
+            _mint(recipients[i], counter.current());
+             counter.increment();
         }
         return counter.current();
     }
 
     /**
-     * Get URI and hash for edition NFT
+     * Get URIs and hash for edition NFT
+     *
      * @return contentUrl, contentHash
      */
-    function getURI() public view returns (string memory, bytes32) {
-        return (contentUrl, contentHash);
+    function getURI() public view returns (string memory, bytes32, string memory) {
+        return (contentUrl, contentHash, thumbnailUrl);
     }
 
     /**
@@ -304,12 +319,13 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @return base64-encoded json metadata object
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_exists(tokenId), "No token");
-        return metadata.createTokenURI(name(), description, contentUrl, contentType, tokenId, size);
+        require(_exists(tokenId), "Edition doesn't exist");
+        return metadata.createTokenURI(name(), description, contentUrl, thumbnailUrl, tokenId, size);
     }
     
      /**
       * ERC2981 - Gets royalty information for token
+      *
       * @param _value the sale price for this token
       */
     function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {

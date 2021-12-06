@@ -4,8 +4,9 @@
  * ░█▄█░▄▀▄▒█▀▒▄▀▄░░░▒░░░▒██▀░█▀▄░█░▀█▀░█░▄▀▄░█▄░█░▄▀▀░░░█▄░█▒█▀░▀█▀
  * ▒█▒█░▀▄▀░█▀░█▀█▒░░▀▀▒░░█▄▄▒█▄▀░█░▒█▒░█░▀▄▀░█▒▀█▒▄██▒░░█▒▀█░█▀░▒█▒
  * 
+ * Made with 🧡 by www.Kreation.tech
  */
-pragma solidity 0.8.6;
+pragma solidity 0.8.10;
 
 import {PaymentSplitterUpgradeable} from "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
 
@@ -14,6 +15,8 @@ import "./ISplitter.sol";
 contract ShakeableSplitter is PaymentSplitterUpgradeable, ISplitter  {
     event PaymentFailed(address to);
     uint256 payees;
+
+    constructor() initializer { }
 
     function initialize(address[] memory _payees, uint256[] memory _shares) public override initializer {
         __PaymentSplitter_init(_payees, _shares);

@@ -4,9 +4,9 @@
  * ░█▄█░▄▀▄▒█▀▒▄▀▄░░░▒░░░▒██▀░█▀▄░█░▀█▀░█░▄▀▄░█▄░█░▄▀▀░░░█▄░█▒█▀░▀█▀
  * ▒█▒█░▀▄▀░█▀░█▀█▒░░▀▀▒░░█▄▄▒█▄▀░█░▒█▒░█░▀▄▀░█▒▀█▒▄██▒░░█▒▀█░█▀░▒█▒
  * 
+ * Made with 🧡 by www.Kreation.tech
  */
-
-pragma solidity 0.8.6;
+pragma solidity 0.8.10;
 
 import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
@@ -40,14 +40,13 @@ contract MintableEditionsFactory {
      * must refer to a content having the same hash.
      * 
      * @param _name name of editions, used in the title as "$name $tokenId/$size"
-     * @param _symbol symbol of the tokens mined by this contract
-     * @param _description description of tokens of this edition
-     * @param _contentUrl content URL of the edition tokens
-     * @param _contentHash SHA256 of the tokens content in bytes32 format (0xHASH)
-     * @param _contentType type of tokens content [0=image, 1=animation/video/audio]
+     * @param _symbol symbol of the tokens minted by this contract
+     * @param _description description of token editions
+     * @param _contentUrl content URL of the token editions
+     * @param _contentHash SHA256 of the token editions content in bytes32 format (0xHASH)
+     * @param _thumbnailUrl optional token editions content thumbnail URL, for animated content only
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _royalties perpetual royalties paid to the creator upon token selling
-     * @param _shareholders addresses receiving shares (can be empty)
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      * @return the address of the editions contract created
      */
@@ -57,18 +56,17 @@ contract MintableEditionsFactory {
         string memory _description,
         string memory _contentUrl,
         bytes32 _contentHash,
-        uint8 _contentType,
+        string memory _thumbnailUrl,
         uint64 _size,
         uint16 _royalties,
-        address[] memory _shareholders,
-        uint16[] memory _shares
+        MintableEditions.Shares[] memory _shares
     ) external returns (address) {
-        require(!contents[_contentHash], "Edition: duplicated content!");
+        require(!contents[_contentHash], "Duplicated content");
         contents[_contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _contentType, _size, _royalties, _shareholders, _shares);
-        emit CreatedEditions(id, msg.sender, _shareholders, _size, instance);
+        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _thumbnailUrl, _size, _royalties, _shares);
+        emit CreatedEditions(id, msg.sender, _shares, _size, instance);
         counter.increment();
         return instance;
     }
@@ -98,5 +96,5 @@ contract MintableEditionsFactory {
      * @param size the number of tokens this editions contract consists of
      * @param contractAddress the address of the contract representing the editions
      */
-    event CreatedEditions(uint256 indexed index, address indexed creator, address[] indexed shareholders, uint256 size, address contractAddress);
+    event CreatedEditions(uint256 indexed index, address indexed creator, MintableEditions.Shares[] indexed shareholders, uint256 size, address contractAddress);
 }

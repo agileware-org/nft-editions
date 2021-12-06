@@ -4,11 +4,11 @@
  * ░█▄█░▄▀▄▒█▀▒▄▀▄░░░▒░░░▒██▀░█▀▄░█░▀█▀░█░▄▀▄░█▄░█░▄▀▀░░░█▄░█▒█▀░▀█▀
  * ▒█▒█░▀▄▀░█▀░█▀█▒░░▀▀▒░░█▄▄▒█▄▀░█░▒█▒░█░▀▄▀░█▒▀█▒▄██▒░░█▒▀█░█▀░▒█▒
  * 
+ * Made with 🧡 by www.Kreation.tech
  */
+pragma solidity 0.8.10;
 
-pragma solidity 0.8.6;
-
-import {ClonesUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./ISplitter.sol";
@@ -42,7 +42,7 @@ contract SplitterFactory  {
      */
     function create(address[] memory _payees, uint256[] memory _shares) external returns (address payable) {
         uint256 id = counter.current();
-        address payable instance = payable(ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id))));
+        address payable instance = payable(Clones.cloneDeterministic(implementation, bytes32(abi.encodePacked(id))));
         ISplitter(instance).initialize(_payees, _shares);
         emit CreatedSplitter(id, msg.sender, _payees, instance);
         counter.increment();
@@ -56,7 +56,7 @@ contract SplitterFactory  {
      * @return the Splitter payment contract
      */
     function get(uint256 index) external view returns (ISplitter) {
-        return ISplitter(payable(ClonesUpgradeable.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this))));
+        return ISplitter(payable(Clones.predictDeterministicAddress(implementation, bytes32(abi.encodePacked(index)), address(this))));
     }
 
     /**

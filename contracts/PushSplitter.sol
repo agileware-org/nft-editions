@@ -4,20 +4,21 @@
  * ░█▄█░▄▀▄▒█▀▒▄▀▄░░░▒░░░▒██▀░█▀▄░█░▀█▀░█░▄▀▄░█▄░█░▄▀▀░░░█▄░█▒█▀░▀█▀
  * ▒█▒█░▀▄▀░█▀░█▀█▒░░▀▀▒░░█▄▄▒█▄▀░█░▒█▒░█░▀▄▀░█▒▀█▒▄██▒░░█▒▀█░█▀░▒█▒
  * 
+ * Made with 🧡 by www.Kreation.tech
  */
-pragma solidity 0.8.6;
+pragma solidity 0.8.10;
 
-//import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
 import "./ISplitter.sol";
 
 contract PushSplitter is Initializable, ISplitter {
     address[] internal payees;
     mapping(address => uint16) internal shares;
+    
+    constructor() initializer { }
     
     function initialize(address[] memory _payees, uint256[] memory _shares) public override initializer {
         require(_payees.length == _shares.length, "Splitter: inputs length mismatch");
@@ -49,7 +50,7 @@ contract PushSplitter is Initializable, ISplitter {
         uint256 value = address(this).balance;
         for (uint i = 0; i < payees.length; i++) {
             uint256 amount = value * shares[payees[i]] / 10_000;
-            AddressUpgradeable.sendValue(payable(payees[i]), amount);
+            Address.sendValue(payable(payees[i]), amount);
         }
     }
 }
