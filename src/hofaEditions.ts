@@ -16,6 +16,9 @@ import {
 
 
 
+
+
+
   export class hofaEditions{
  public Emetadata!: EditionMetadata 
 public Editions!:  MintableEditions 
@@ -31,7 +34,6 @@ public async purchase(editionsId:number ): Promise<number> {
    expect(price).to.not.be.equal("0x0");
  return editions.purchase();
      
-    
     
 }
 public async mint(editionsId:number):Promise<number>{
@@ -59,4 +61,4 @@ public async mintAndTransfer(editionsId:number, recipients:Array<['address']>, c
     
 
 }
-}
+  }
