@@ -3,27 +3,29 @@
 
 ---
 
-Solidity smart contracts implementing ERC721 with multiple editions. We will call it _Multi Editions Non Fungible Token_ or `MENFT`: one `MENFT` can produce (_mint_) a fixed set of NFTs (its _editions_).
+Solidity smart contracts implementing ERC721 with multiple editions. We will call it _Multi edition Non Fungible Token_ or `MeNFT`: one `MeNFT` can produce (_mint_) a fixed set of NFTs (its _editions_).
+
+Once minted, the editions behave very much like any other NFT implementing the `ERC-721` specifications: they can be transferred, auctioned and burnt as their specific owner decide.
 
 # Properties
 
-Instances of this contract are what we call `MENFT` and. can be obtained by using the `create` operation on the `MintableEditionsFactory` contract, with a substantial saving in gas.
+Instances of this contract are what we call `MeNFT` and. can be obtained by using the `create` operation on the `MintableEditionsFactory` contract, with a substantial saving in gas.
 
-Each `MENFT` produced has the following characteristics:
+Each `MeNFT` produced has the following characteristics:
 
 * `name` (IMMUTABLE) can be considered the title for the editions produced, used by OpenSea as name of the collection
 * `symbol` (IMMUTABLE) is the symbol associated with the editions
 * `description` (IMMUTABLE) can be used to describe the editions to the public, can contain [markdown](https://www.markdownguide.org/cheat-sheet/)
-* `contentUrl` is used to associate some off-chain content (the contract owner can update, direct references to IPFS content are possible)
-* `thumbnailUrl` (OPTIONAL) is used to associate a static off-chain content when the main content is an animation (the contract owner can update, direct references to IPFS content are possible)
+* `contentUrl` is used to associate some off-chain content (the MeNFT owner can update, direct references to IPFS content are possible)
+* `thumbnailUrl` (OPTIONAL) is used to associate a static off-chain content when the main content is an animation (the MeNFT owner can update, direct references to IPFS content are possible)
 * `contentHash` (IMMUTABLE) sha256 of the associated off-chain content, ensures content uniqueness within the chain
-* `size` (IMMUTABLE) determines how many editions of this MENFT can be minted: if set to 0 then `uint64.max()` editions can be minted (about _18.5 **quintillions**_)
-* `royalties` (IMMUTABLE) perpetual royalties to be paid to the MENFT owner upon any reselling, in [basis-points](https://www.investopedia.com/terms/b/basispoint.asp) format (eq. `250` corresponding to **2.5%**)
+* `size` (IMMUTABLE) determines how many editions of this MeNFT can be minted: if set to 0 then `uint64.max()` editions can be minted (about _18.5 **quintillions**_)
+* `royalties` (IMMUTABLE) perpetual royalties to be paid to the MeNFT owner upon any reselling, in [basis-points](https://www.investopedia.com/terms/b/basispoint.asp) format (eq. `250` corresponding to **2.5%**)
 * `shares` (IMMUTABLE) pairs of (shareholder, percentage) describing how the value collected by the sales of this contract will be splitted between the shareholders and the owner (percentages expressed in [basis-points](https://www.investopedia.com/terms/b/basispoint.asp))
 
-Almost all the properties are immutable, with the exclusion of the `contentUrl` and `thumbnailUrl`, allowing the contract owner to move the off-chain content, if necessary.
+Almost all the properties are immutable, with the exclusion of the `contentUrl` and `thumbnailUrl`, allowing the MeNFT owner to move the off-chain content, if necessary.
 
-The contract guarantees minting is automatically disabled when the last available edition is produced: an MENFT can never generate more NFTs than `size`, or `18,446,744,073,709,551,614` if the MNFT was created unbound (`size = 0`).
+The MeNFT guarantees minting is automatically disabled when the last available edition is produced: a MeNFT can never generate more NFTs than `size`, or `18,446,744,073,709,551,614` if the MNFT was created unbound (`size = 0`).
 
 # Capabilities
 
@@ -31,12 +33,12 @@ The contract guarantees minting is automatically disabled when the last availabl
 
 The following are the roles available on the contract:
 
-* the `owner`, also referenced as _the artist_, is the **creator** of the MENFT, unless ownership is transferrred
+* the `owner`, also referenced as _the artist_, is the **creator** of the MeNFT, unless ownership is transferrred
 * the `minters` are those allowed for minting, in case the zero-address is added among the allowed minters _anyone_ can be considered a _minter_
 * the `buyer` is anyone who mints a token through the `purchase()` operation
 * the `shareholders` are those receving shares of the contract balance upon withdrawal and it always include the `owner`/`artist`
 
-At any time, any shareholder can request to `withdraw()` its part of the shares: the action can be repeated for partial payouts. At any time anyone can `shake()` MENFT, releasing its balance toward the shareholders.
+At any time, any shareholder can request to `withdraw()` its part of the shares: the action can be repeated for partial payouts. At any time anyone can `shake()` MeNFT, releasing its balance toward the shareholders.
 
 ## Owner
 
@@ -62,9 +64,9 @@ The contract is quite flexible and allows the editions _owner_ to:
 Gas required: `652323`
 
 ### Description
-A static image MENFT (stored on IPFS) able to produce 100 editions, each one with 2.5% perpetual royalties on secondary sales.
+A static image MeNFT (stored on IPFS) able to produce 100 editions, each one with 2.5% perpetual royalties on secondary sales.
 
-Of any revenues this contract might collect, 15% of it will be given to the _curator_ address, the remainder 85% will go to the contract _owner_.
+Of any revenues this contract might collect, 15% of it will be given to the _curator_ address, the remainder 85% will go to the MeNFT _owner_.
 
 ### Properties
 
