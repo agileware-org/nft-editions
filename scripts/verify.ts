@@ -1,21 +1,26 @@
-import { run, deployments } from "hardhat";
-import { NomicLabsHardhatPluginError } from "hardhat/plugins";
+import { run, deployments, getChainId } from "hardhat";
+import { readFileSync, writeFileSync } from 'fs';
 
 const {get} = deployments;
+let contracts:{[name: string]: string} = {};
 
 async function verify(contract:string, args: any[]) {
-  try {
-    const deployment = await get(contract);
+  const deployment = await get(contract);
+  contracts[contract] = deployment.address;
+  try {  
     await run("verify:verify", {
       address: deployment.address,
       constructorArguments: args,
     })
   } catch (e) {
-    console.log((e instanceof Error) ? e.message : "ERROR: " + e);
+    console.log((e instanceof Error) ? "WARNING: " + e.message : "ERROR: " + e);
   }
 }
 
 async function main() {
+  const addresses = JSON.parse(readFileSync('./addresses.json', 'utf-8'));
+  addresses[await getChainId()] = contracts;
+  
   await verify('EditionsMetadataHelper', []);
   await verify('MintableEditions', [await (await get('EditionsMetadataHelper')).address]);
   await verify('MintableEditionsFactory', [await (await get('MintableEditions')).address]);
@@ -23,6 +28,8 @@ async function main() {
   await verify('ShakeableSplitter', []);
   await verify('SplitterFactory', [await (await get('PushSplitter')).address]);
   await verify('SplitterFactory', [await (await get('ShakeableSplitter')).address]);
+
+  writeFileSync('./addresses.json', JSON.stringify(addresses, null, 2), {encoding: 'utf-8'});
 }
 
 main()
