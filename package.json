@@ -15,7 +15,7 @@
     "typechain": "hardhat typechain",
     "compile": "hardhat compile",
     "deploy": "hardhat deploy",
-    "test": "hardhat test",
+    "test": "mocha",
     "build": "npm run prepack",
     "prepack": "hardhat compile && tsc",
     "verify": "hardhat run scripts/verify.ts",
@@ -42,6 +42,8 @@
     "hardhat": "^2.7.0",
     "hardhat-deploy": "^0.8.11",
     "hardhat-gas-reporter": "^1.0.4",
+    "jest": "^27.4.3",
+    "mocha": "^9.1.3",
     "solidity-coverage": "^0.7.17",
     "ts-node": "^10.1.0",
     "typechain": "^5.1.2",
@@ -50,7 +52,6 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.4.0",
     "@openzeppelin/contracts-upgradeable": "^4.4.0",
-    "base64-sol": "^1.0.1",
-    "mocha": "^9.1.3"
+    "base64-sol": "^1.0.1"
   }
 }
