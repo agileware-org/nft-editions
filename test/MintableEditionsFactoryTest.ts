@@ -1,7 +1,6 @@
 require("chai").use(require('chai-as-promised'));
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
-require ("mocha");
 
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -18,7 +17,7 @@ describe("MintableEditionsFactory", function () {
   
   beforeEach(async () => {
     const { MintableEditionsFactory } = await deployments.fixture(["Editions"]);
-   // const dynamicMintableAddress = (await deployments.get("MintableEditions")).address;
+    const dynamicMintableAddress = (await deployments.get("MintableEditions")).address;
     factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
     [artist, shareholder, other] = await ethers.getSigners();
   });
@@ -155,8 +154,7 @@ describe("MintableEditionsFactory", function () {
       150,
       [{holder: (await shareholder.getAddress()), bps: 1000}, {holder: (await other.getAddress()), bps: 500}]
     );
-   // const editions = (await ethers.getContractAt("MintableEditions", await factory.get(0))) as MintableEditions;
-    
+    const editions = (await ethers.getContractAt("MintableEditions", await factory.get(0))) as MintableEditions;
   });
 
   it("Should reject creation with duplicated shareholders", async function () {

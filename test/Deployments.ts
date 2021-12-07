@@ -6,8 +6,8 @@ import "@nomiclabs/hardhat-ethers";
 describe("Deployments", function () {
 
   it("Should deploy MintableEditionsFactory", async function () {
-    const EditionMetadata = await ethers.getContractFactory("EditionMetadata");
-    const metadata = await EditionMetadata.deploy();
+    const EditionsMetadataHelper = await ethers.getContractFactory("EditionsMetadataHelper");
+    const metadata = await EditionsMetadataHelper.deploy();
 
     const MintableEditions = await ethers.getContractFactory("MintableEditions");
     const editionsTemplate = await MintableEditions.deploy(metadata.address);

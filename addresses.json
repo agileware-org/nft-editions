@@ -1,0 +1,10 @@
+{
+  "4": {
+    "EditionsMetadataHelper": "0x4c1F79D0F98846AE45E18FD6993fd7e457fa4D6c",
+    "MintableEditions": "0xdACA8670fA682905C75F44084d2ff7AE9C7b6dC2",
+    "MintableEditionsFactory": "0xD2A087906aeed1b0664Ed59AcFc002B8d3e1351E",
+    "PushSplitter": "0xD6b13ea585200F0d0137aDE3C60c27e40BF1998c",
+    "ShakeableSplitter": "0x6B83ad1e54708eDd4391AC83978382FA3B2F7669",
+    "SplitterFactory": "0x0942e6b49878AD5448d79227FC383edC8cF0412B"
+  }
+}

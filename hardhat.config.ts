@@ -46,14 +46,17 @@ const config: HardhatUserConfig = {
     coverage: {
       url: "http://127.0.0.1:8545", // Coverage launches its own ganache-cli client
     },
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`, 
+      gasPrice: 50000000000, // 50 Gwei
+    }
   },
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
   },
   gasReporter: {
     currency: 'USD',
-    gasPrice: 100,
-    enabled: process.env.REPORT_GAS ? true : false,
+    enabled: process.env.REPORT_GAS == "true" || false,
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     maxMethodDiff: 10,
   },
