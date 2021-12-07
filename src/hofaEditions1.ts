@@ -16,7 +16,7 @@ import {
 
 export class hofaEditions {
 
-	public MintableEdition: MintableEditions
+	public MintableEdition!: MintableEditions
 	public Factory!: MintableEditionsFactory
 	public shareholder!: SignerWithAddress;
 
@@ -25,29 +25,23 @@ export class hofaEditions {
 	) {
 		if (!factoryAddr) {
 			//load Factory contract
-			this.Factory = await ethers.getContractAt("MintableEditionsFactory", factoryAddr) as MintableEditionsFactory;
-			this.MintableEditions = await ethers.getContractAt("MintableEditions", this.Factory);
+			this.Factory = ethers.getContractAt("MintableEditionsFactory", factoryAddr) as MintableEditionsFactory;
+			this.MintableEdition = ethers.getContractAt("MintableEditions", this.Factory);
+		} else {
+			this.Factory = ethers.getContractAt("MintableEditionsFactory") as MintableEditionsFactory;
+			this.MintableEdition = ethers.getContractAt("MintableEditions", this.Factory);
 		}
 	}
 	// create functions
 
 	// create a MintableEdition
 	// @param address // The creator address for Edition create (I suppose)
-	public async create(name:string,symbol:string,description:string,contentUrl:string,contentHash:string|Bytes,thumbnailUrl:string,size:number,royalties:number,shares: { holder: string; bps: number }[]):Promise<MintableEditions>{
-		// const factory = (await ethers.getContractAt("MintableEditionsFactory", this.Factory.address)) as MintableEditionsFactory;
-		const factory = MintableEditionsFactory;
+	// public async create(name:string,symbol:string,description:string,contentUrl:string,contentHash:string,thumbnailUrl:string,size:number,royalties:number,shares: { holder: string; bps: number }[]):Promise<MintableEditions>{
+	public async create(name:string,symbol:string,description:string,contentUrl:string,contentHash:string,thumbnailUrl:string,size:number,royalties:number,shares: { holder: string; bps: number }[]){
+		const factory = (await ethers.getContractAt("MintableEditionsFactory")) as MintableEditionsFactory;
 	  
-		let name = name
-		let symbol = symbol
-		let description = description
-		let contentUrl = contentUrl
-		let contentHash = contentHash
-		let thumbnailUrl = thumbnailUrl
-		let size = size
-		let royalties = royalties
-		let shares = shares
-	  
-		const editionsAddress = factory.create(
+		// const editionsAddress = await factory.create(
+		factory.create(
 		name,
 		symbol,
 		description,
@@ -57,17 +51,23 @@ export class hofaEditions {
 		size,
 		royalties,
 		shares)
+
 		// Verify creation
+		/*
 		const ver = factory.instances();
-		if ( ver == 1 ) {
-			const editions = await ethers.getContractAt("MintableEditions", editionsAddress);
-			self.MintabelEdition = editions;
-			return True;
-		} else {
-			return False;
-		}
+		const editions = await ethers.getContractAt("MintableEditions", editionsAddress)as MintableEditions
+		this.Factory = factory
+		this.MintableEdition = editions
+		return editions
+		*/
 	  }
 
+	public async get(id: number): Promise<string>{
+		const factory = (await ethers.getContractAt("MintableEditionsFactory")) as MintableEditionsFactory;
+		return factory.get(id)
+	}
+
+	/*
 	// purchase on Editions
 	// @param editionsId
 	public async purchase(editionId:number ): Promise<number> {
@@ -131,4 +131,5 @@ export class hofaEditions {
 		}
 		return editionsMultiple.mintAndTransfer(addresses);
 	}
+	*/
 }
