@@ -111,10 +111,10 @@ export class HofaMeNFT {
 	// @param count
 	public async mintMultiple(editionId:number,count:number):Promise<string>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		let address = this.signerOrProvider;
-		let addresses = new Array();
+		let address = "0x00000000000012345566" // here the address of actor;
+		let addresses: Array<string> = [];
 		for (let i = 0; i < count; i++) {
-			addresses.append(address);
+			addresses.push(address);
 		}
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
 		return new Promise((resolve, reject) => {
@@ -133,11 +133,11 @@ export class HofaMeNFT {
 	// @param count - default 1
 	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<number>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		let address = this.signerOrProvider;
-		let addresses = new Array();
+		let address = "0x00000000000012345566" // here the address of actor;
+		let addresses: Array<string> = [];
 		for (const addr of recipients!){
 			for (let i = 0; i < count; i++) {
-				addresses.append(address);
+				addresses.push(address);
 			}
 		}
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
