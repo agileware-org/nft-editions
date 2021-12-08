@@ -39,7 +39,6 @@ describe('On HofaMeNFT', () => {
 			const editions = await hofa.create(info);
 			editions.connect(artist);
 			// then
-			console.log("editions:" + editions.address);
 			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
 			expect(await editions.connect(artist).contentHash()).to.be.equal("0xABCDEF9876543210");
 		})
