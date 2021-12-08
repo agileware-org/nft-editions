@@ -37,7 +37,13 @@ export class HofaMeNFT {
 	 * Creates a new MeNFT
 	 */ 
 	public async create(info:MeNFTInfo): Promise<MintableEditions> {
-		const contentHash = "0xABCDEF9876543210"; // TO DO: to be computed
+		const contentHash = this._generateCHash(info.contentUrl); // TO DO: to be computed
+		if (!info.thumbnailUrl) {
+			info.thumbnailUrl = "";
+		}
+		if (!info.shares) {
+			info.shares = [{holder: "", bps: 0}];
+		}
 		const tx = await (await this.factory.create(info.name, info.symbol, info.description, info.contentUrl, contentHash, info.thumbnailUrl, info.size, info.royalties, info.shares)).wait();
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
@@ -56,69 +62,89 @@ export class HofaMeNFT {
 		return MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 	}
 
-	/*
-	// purchase on Editions
-	// @param editionsId
-	public async purchase(editionId:number ): Promise<number> {
-		try {
-				
-				const editions = self.MintableEditions;
-				const price = await editions.price();
-				expect(price).to.not.be.equal("0x0");
-				return editions.purchase();
-		} catch {
-			return Promise.reject(err.message);
-		}
+	// Gnerate Hash from content
+	// @param content
+	private _generateCHash(content:<string>):Promise<string>{
+		return sah256(content); // To DO only example function. Which is content datatype ?
 	}
 
-	// mint on Editions
+	// purchase a MeNFT by it's id
 	// @param editionsId
-	public async mint(editionId:number):Promise<number>{
-		try {
-			const edition = this.MintableEditions;
-			// pass 
-		} catch {
-			return Promise.reject(err.message);
+	// @parma value
+	public async purchase(editionId:number, value:number): Promise<string> {
+		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
+		const price = edition.price()
+		if (price > 0) {
+			const tx = await (await edition.purchase(value)).wait();
+			return new Promise((resolve, reject) => {
+				for (const log of tx.events!) {
+					if (log.event === "Transfer") {
+						resolve(log.args![4]);
+					}
+				}
+				reject("Event `purchase` not found");
+			});
 		}
-		return editions.mint();
+		return "Not for sale";
 	}
 
-
-	// mint multiple on Editions
+	// mint a MeNFT by it's id
 	// @param editionsId
-	public async mintMultiple(editionId:number,count:number):Promise<number>{
-		const count = count;
-		try {
-			const editionMultiple = self.MintableEditions;
-			let address = minterAddr;
-			let addresses = Array<string>
-			for (i=0, i<count, i++)  {
-				addresses.append(address);
-			} 
-			
-		} catch {
-			return Promise.reject(err.message);
-		}
-		return editionsMultiple.mintAndTransfer(addresses);
-	}
-
-
-	// mint and transfer from Editions
-	// @param editionsId
-	public async mintAndTransfer(editionId:number, recipients:Array<['address']>, count:number=1):Promise<number>{
-		
-		try {
-			const editionMultiple = self.MintableEditions;
-			let addresses = Array<string>
-			for (addr in recipients): {
-				for i in range(count): {
-					addresses.append(address);
+	public async mint(editionId:number):Promise<string>{
+		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
+		const tx = await ( await edition.mint()).wait()
+		return new Promise((resolve, reject) => {
+			for (const log of tx.events!) {
+				if (log.event === "Transfer") {
+					resolve(log.args![4]);
 				}
 			}
-		} catch {
-			return Promise.reject(err.message);
-		}
-		return editionsMultiple.mintAndTransfer(addresses);
+			reject("Event `mint` not found");
+		});
 	}
-	*/
+
+
+	// multiple mint for one address a MeNFT by it's id
+	// @param editionsId
+	// @param count
+	public async mintMultiple(editionId:number,count:number):Promise<string>{
+		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
+		let address = this.signerOfProvider;
+		let addresses = Array<string>;
+		for (let i = 0; i < count; i++) {
+			addresses.append(address);
+		}
+		const tx = await( await edition.mintAndTransfer(addresses)).wait()
+		return new Promise((resolve, reject) => {
+			for (const log of tx.events!) {
+				if (log.event === "Transfer") {
+					resolve(log.args![4]);
+				}
+			}
+		});
+	}
+
+
+	// Multiple mint for many address a MeNFT by it's id
+	// @param editionsId
+	// @param recipients
+	// @param count - default 1
+	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<number>{
+		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
+		let address = this.signerOfProvider;
+		let addresses = Array<string>;
+		for (const addr of recipients!){
+			for (let i = 0; i < count; i++) {
+				addresses.append(address);
+			}
+		}
+		const tx = await( await edition.mintAndTransfer(addresses)).wait()
+		return new Promise((resolve, reject) => {
+			for (const log of tx.events!) {
+				if (log.event === "Transfer") {
+					resolve(log.args![4]);
+				}
+			}
+		});
+	}
 }
