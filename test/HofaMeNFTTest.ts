@@ -40,7 +40,7 @@ describe.only('On HofaMeNFT', () => {
 			editions.connect(artist);
 			// then
 			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
-			expect(await editions.connect(artist).contentHash()).to.be.equal("0xABCDEF9876543210");
+			expect(await editions.connect(artist).contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
 		})
 	})
 });

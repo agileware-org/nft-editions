@@ -2,9 +2,6 @@ const { expect } = require("chai");
 const IPFS = require('ipfs-core');
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
-import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
-
-// import address from "../addresses.json";
 import { readFileSync, writeFileSync } from 'fs';
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
@@ -70,20 +67,29 @@ export class HofaMeNFT {
 	// Gnerate Hash from content
 	// @param content
 	private async _generateCHash(content:string):Promise<string>{
-		//return sha256(content).toString(); // To DO only example function. Which is content datatype ?
-		// return "0xABCDEF9876543210"; // To DO only example function. Which is content datatype ?
 		const contentData = await IPFS.create();
-		const stream = contentData.cat(content.split("/")[content.length - 1]);
-		let data = "";
-		for await (const chunk of stream) {
-			data += chunk.toString();
-		}
-		return data;
+			/*
+			const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
+			let data = "";
+			for await (const chunk of stream) {
+				if (chunk) {
+					data += chunk.toString();
+				}
+			}
+			let data = readFileSync('./test.mp4','utf8');
+			*/
+			
+			let crypto = require("crypto");
+			let hashHex = crypto.createHash("sha256").update(content).digest('hex');
+			// sha256 convert
+			console.log(hashHex);
+			return "0x" + hashHex.toString();
 	}
 
 	// purchase a MeNFT by it's id
 	// @param editionsId
 	// @parma value
+	/*
 	public async purchase(editionId:number, value:number): Promise<string> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
 		const price = await (await edition.price())
@@ -102,6 +108,7 @@ export class HofaMeNFT {
 		}
 		return "Not for sale";
 	}
+	*/
 
 	// mint a MeNFT by it's id
 	// @param editionsId
