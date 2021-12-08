@@ -64,7 +64,7 @@ export class HofaMeNFT {
 
 	// Gnerate Hash from content
 	// @param content
-	private _generateCHash(content:<string>):Promise<string>{
+	private _generateCHash(content:string):Promise<string>{
 		return sah256(content); // To DO only example function. Which is content datatype ?
 	}
 
@@ -110,7 +110,7 @@ export class HofaMeNFT {
 	public async mintMultiple(editionId:number,count:number):Promise<string>{
 		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
 		let address = this.signerOfProvider;
-		let addresses = Array<string>;
+		let addresses: Array<string>;
 		for (let i = 0; i < count; i++) {
 			addresses.append(address);
 		}
@@ -132,7 +132,7 @@ export class HofaMeNFT {
 	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<number>{
 		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
 		let address = this.signerOfProvider;
-		let addresses = Array<string>;
+		let addresses: Array<string>;
 		for (const addr of recipients!){
 			for (let i = 0; i < count; i++) {
 				addresses.append(address);
