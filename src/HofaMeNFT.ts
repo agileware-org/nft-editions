@@ -1,8 +1,11 @@
 const { expect } = require("chai");
+const IPFS = require('ipfs-core');
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 
+// import address from "../addresses.json";
+import { readFileSync, writeFileSync } from 'fs';
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
 	MintableEditions, MintableEditions__factory } from '../typechain';
@@ -30,7 +33,8 @@ export class HofaMeNFT {
 			//load Factory contract
 			this.factory = MintableEditionsFactory__factory.connect(factoryAddress as string, signerOrProvider);
 		} else {
-			this.factory = MintableEditionsFactory__factory.connect("0x0000", signerOrProvider); // TO DO: retrieve address from addresses.json file
+			const addresses = JSON.parse(readFileSync('./addresses.json', 'utf-8'));
+			this.factory = MintableEditionsFactory__factory.connect(addresses[4].MintableEditionsFactory, signerOrProvider); // TO DO: retrieve address from addresses.json file
 		}
 	}
 
@@ -38,7 +42,7 @@ export class HofaMeNFT {
 	 * Creates a new MeNFT
 	 */ 
 	public async create(info:MeNFTInfo): Promise<MintableEditions> {
-		const contentHash = this._generateCHash(info.contentUrl); // TO DO: to be computed
+		const contentHash = await this._generateCHash(info.contentUrl); // TO DO: to be computed
 		if (!info.thumbnailUrl) {
 			info.thumbnailUrl = "";
 		}
@@ -65,8 +69,16 @@ export class HofaMeNFT {
 
 	// Gnerate Hash from content
 	// @param content
-	private _generateCHash(content:string):Promise<string>{
-		return sah256(content).toString(); // To DO only example function. Which is content datatype ?
+	private async _generateCHash(content:string):Promise<string>{
+		//return sha256(content).toString(); // To DO only example function. Which is content datatype ?
+		// return "0xABCDEF9876543210"; // To DO only example function. Which is content datatype ?
+		const contentData = await IPFS.create();
+		const stream = contentData.cat(content.split("/")[content.length - 1]);
+		let data = "";
+		for await (const chunk of stream) {
+			data += chunk.toString();
+		}
+		return data;
 	}
 
 	// purchase a MeNFT by it's id
@@ -74,13 +86,14 @@ export class HofaMeNFT {
 	// @parma value
 	public async purchase(editionId:number, value:number): Promise<string> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		const price = await edition.price
-		if (price > 0) {
+		const price = await (await edition.price())
+		if ( price > 0) {
 			//const tx = await (await edition.purchase({value: ethers.utils.parseEther(value)})).wait();
 			const tx = await (await edition.purchase({value: value})).wait();
+			//const tx = await (await edition.purchase()).wait();
 			return new Promise((resolve, reject) => {
 				for (const log of tx.events!) {
-					if (log.event === "Transfer") {
+					if (log.event === "EditionSold") {
 						resolve(log.args![4]);
 					}
 				}
@@ -111,7 +124,7 @@ export class HofaMeNFT {
 	// @param count
 	public async mintMultiple(editionId:number,count:number):Promise<string>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		let address = "0x00000000000012345566" // here the address of actor;
+		let address = "0x0ASDASLDKJASDLKADJALSKJDLKJDASLKJLAS12345"; //this.signerOrProvider.getAddress() // here the address of actor; this.signerOrProvider.address
 		let addresses: Array<string> = [];
 		for (let i = 0; i < count; i++) {
 			addresses.push(address);
@@ -119,10 +132,12 @@ export class HofaMeNFT {
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
+				console.log(log.event);
 				if (log.event === "Transfer") {
 					resolve(log.args![4]);
 				}
 			}
+			reject("Event `mintMultiple` not found");
 		});
 	}
 
@@ -133,20 +148,21 @@ export class HofaMeNFT {
 	// @param count - default 1
 	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<number>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		let address = "0x00000000000012345566" // here the address of actor;
 		let addresses: Array<string> = [];
 		for (const addr of recipients!){
 			for (let i = 0; i < count; i++) {
-				addresses.push(address);
+				addresses.push(addr);
 			}
 		}
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
+				console.log(log.event);
 				if (log.event === "Transfer") {
 					resolve(log.args![4]);
 				}
 			}
+			reject("Event `mintMultiple` not found");
 		});
 	}
 }
