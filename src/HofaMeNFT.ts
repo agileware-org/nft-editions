@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
+import { BigNumber, BigNumberish } from '@ethersproject/bignumber'
 
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
@@ -65,17 +66,18 @@ export class HofaMeNFT {
 	// Gnerate Hash from content
 	// @param content
 	private _generateCHash(content:string):Promise<string>{
-		return sah256(content); // To DO only example function. Which is content datatype ?
+		return sah256(content).toString(); // To DO only example function. Which is content datatype ?
 	}
 
 	// purchase a MeNFT by it's id
 	// @param editionsId
 	// @parma value
 	public async purchase(editionId:number, value:number): Promise<string> {
-		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
-		const price = edition.price()
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		const price = await edition.price
 		if (price > 0) {
-			const tx = await (await edition.purchase(value)).wait();
+			//const tx = await (await edition.purchase({value: ethers.utils.parseEther(value)})).wait();
+			const tx = await (await edition.purchase({value: value})).wait();
 			return new Promise((resolve, reject) => {
 				for (const log of tx.events!) {
 					if (log.event === "Transfer") {
@@ -91,7 +93,7 @@ export class HofaMeNFT {
 	// mint a MeNFT by it's id
 	// @param editionsId
 	public async mint(editionId:number):Promise<string>{
-		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
 		const tx = await ( await edition.mint()).wait()
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
@@ -108,9 +110,9 @@ export class HofaMeNFT {
 	// @param editionsId
 	// @param count
 	public async mintMultiple(editionId:number,count:number):Promise<string>{
-		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
-		let address = this.signerOfProvider;
-		let addresses: Array<string>;
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		let address = this.signerOrProvider;
+		let addresses = new Array();
 		for (let i = 0; i < count; i++) {
 			addresses.append(address);
 		}
@@ -130,9 +132,9 @@ export class HofaMeNFT {
 	// @param recipients
 	// @param count - default 1
 	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<number>{
-		const edition = MintableEditions_factgory.connect(await this.factory.get(editionsId), this.signerOfProvider);
-		let address = this.signerOfProvider;
-		let addresses: Array<string>;
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		let address = this.signerOrProvider;
+		let addresses = new Array();
 		for (const addr of recipients!){
 			for (let i = 0; i < count; i++) {
 				addresses.append(address);
