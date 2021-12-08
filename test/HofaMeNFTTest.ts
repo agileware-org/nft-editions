@@ -4,44 +4,44 @@ const { ethers, deployments } = require("hardhat");
 
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { hofaEditions } from "../src/hofaEditions1"
+import { HofaMeNFT, MeNFTInfo } from "../src/HofaMeNFT"
 import { MintableEditions } from "../typechain"
 
 
-// se metto only, questo e' l'unica suite di test eseguita
-describe.only('Hofaclass', () => {
-	let hofa: hofaEditions;
+describe.only('On HofaMeNFT', () => {
+	let hofa: HofaMeNFT;
 	let artist: SignerWithAddress;
+	let curator: SignerWithAddress;
+	let shareholder: SignerWithAddress;
 
-	// questo codice viene eseguito prima di ogni test
 	beforeEach(async () => {
-		[artist] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
-		hofa = new hofaEditions(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
+		[artist, shareholder, curator] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
+		hofa = new HofaMeNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
 	})
 
 	describe("#constructor", () => {
 		let test: string
 	})
 
-	describe("create function", () => {
-		it("should create a mintableEditions", async function() {
-			// se faccio questo
-			const editions = await hofa.create(
-				"Roberto Lo Giacco", 
-				"", 
-				"", 
-				"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu", 
-				"0x04db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc", 
-				"https://i.imgur.com/FjT55Ou.jpg", 
-				1000, 
-				250, 
-				[]);
+	describe("the create function", () => {
+		it("should create a MeNFT", async function() {
+			// given
+			const info:MeNFTInfo = {
+				name: "Emanuele",
+				symbol: "LELE",
+				description: "My very first MeNFT",
+				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+				size: 1000,
+				royalties: 250,
+				shares: [{ holder:curator.address, bps:100 }],
+			}
+			// when
+			const editions = await hofa.create(info);
 			editions.connect(artist);
-			// allora deve succedere questo
+			// then
 			console.log("editions:" + editions.address);
-			expect(await editions.connect(artist).name()).to.be.equal("Roberto Lo Giacco");
-			expect(await editions.connect(artist).contentHash()).to.be.equal("0x04db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc");
+			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
+			expect(await editions.connect(artist).contentHash()).to.be.equal("0xABCDEF9876543210");
 		})
 	})
-
 });

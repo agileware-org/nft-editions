@@ -6,6 +6,19 @@ import {
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
 	MintableEditions, MintableEditions__factory } from '../typechain';
 
+export interface MeNFTInfo {
+	name:string,
+	symbol:string,
+	description:string,
+	contentUrl:string,
+	thumbnailUrl?:string,
+	size:number,
+	royalties:number,
+	shares?: { 
+		holder: string; 
+		bps: number 
+	}[]
+}
 export class HofaMeNFT {
 	public signerOrProvider: Signer | Provider;
 	public factory: MintableEditionsFactory;
@@ -16,37 +29,31 @@ export class HofaMeNFT {
 			//load Factory contract
 			this.factory = MintableEditionsFactory__factory.connect(factoryAddress as string, signerOrProvider);
 		} else {
-			this.factory = MintableEditionsFactory__factory.connect("0x0000", signerOrProvider);
+			this.factory = MintableEditionsFactory__factory.connect("0x0000", signerOrProvider); // TO DO: retrieve address from addresses.json file
 		}
 	}
-	// create functions
 
-	// create a MintableEdition
-	// @param address // The creator address for Edition create (I suppose)
-	// public async create(name:string,symbol:string,description:string,contentUrl:string,contentHash:string,thumbnailUrl:string,size:number,royalties:number,shares: { holder: string; bps: number }[]):Promise<MintableEditions>{
-	public async create(
-		name:string,
-		symbol:string,
-		description:string,
-		contentUrl:string,
-		contentHash:string,
-		thumbnailUrl:string,
-		size:number,
-		royalties:number,
-		shares: { holder: string; bps: number }[]): Promise<MintableEditions> {
-			const tx = await (await this.factory.create(name, symbol, description, contentUrl, contentHash, thumbnailUrl, size, royalties, shares)).wait();
-			return new Promise((resolve, reject) => {
-				for (const log of tx.events!) {
-					if (log.event === "CreatedEditions") {
-						resolve(MintableEditions__factory.connect(log.args![4], this.signerOrProvider));
-					}
+	/**
+	 * Creates a new MeNFT
+	 */ 
+	public async create(info:MeNFTInfo): Promise<MintableEditions> {
+		const contentHash = "0xABCDEF9876543210"; // TO DO: to be computed
+		const tx = await (await this.factory.create(info.name, info.symbol, info.description, info.contentUrl, contentHash, info.thumbnailUrl, info.size, info.royalties, info.shares)).wait();
+		return new Promise((resolve, reject) => {
+			for (const log of tx.events!) {
+				if (log.event === "CreatedEditions") {
+					resolve(MintableEditions__factory.connect(log.args![4], this.signerOrProvider));
 				}
-				reject("Event `CreatedEditions` not found");
-			});
-	  }
+			}
+			reject("Event `CreatedEditions` not found");
+		});
+	}
 
-	public async get(id: number): Promise<string>{
-		return this.factory.get(id)
+	/**
+	 * Retrieves a MeNFT by it's id
+	 */
+	public async get(id: number): Promise<MintableEditions>{
+		return MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 	}
 
 	/*
