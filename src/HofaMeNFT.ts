@@ -2,16 +2,11 @@ const { expect } = require("chai");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
 
-import "@nomiclabs/hardhat-ethers";
-import { Wallet } from '@ethersproject/wallet'
-
-
-import { rejects } from 'assert';
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
 	MintableEditions, MintableEditions__factory } from '../typechain';
 
-export class hofaEditions {
+export class HofaMeNFT {
 	public signerOrProvider: Signer | Provider;
 	public factory: MintableEditionsFactory;
 
@@ -39,24 +34,14 @@ export class hofaEditions {
 		size:number,
 		royalties:number,
 		shares: { holder: string; bps: number }[]): Promise<MintableEditions> {
-			
-			const callerAddress = await (this.signerOrProvider as Signer).getAddress();
-			
-			await this.factory.create(name, symbol, description, contentUrl, contentHash, thumbnailUrl, size, royalties, shares);
-			const filterCreator = await this.factory.filters.CreatedEditions(null, callerAddress , null, null, null);
-			
-			this.factory.on(filterCreator, (a,b,c,d,e,f) => {
-				console.log("a: " + a);
-				console.log("b: " + b);
-				console.log("c: " + c);
-				console.log("d: " + d);
-				console.log("e: " + e);
-				console.log("f: " + f);
-			})
-			const editionsAddress = await this.factory.get(1);
-
-			return new Promise((resolve) => { 
-				resolve(MintableEditions__factory.connect(editionsAddress, this.signerOrProvider)) 
+			const tx = await (await this.factory.create(name, symbol, description, contentUrl, contentHash, thumbnailUrl, size, royalties, shares)).wait();
+			return new Promise((resolve, reject) => {
+				for (const log of tx.events!) {
+					if (log.event === "CreatedEditions") {
+						resolve(MintableEditions__factory.connect(log.args![4], this.signerOrProvider));
+					}
+				}
+				reject("Event `CreatedEditions` not found");
 			});
 	  }
 
