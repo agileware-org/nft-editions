@@ -353,12 +353,23 @@ describe("MintableEditions", function () {
     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.0"));
   });
 
-  it("ERC-721: totalSupply increases upon minting", async function () { 
-    expect.fail('Not implemented');
+  it("ERC-721: totalSupply increases upon minting", async function () {
+    await expect(await editions.totalSupply()).to.be.equal(0);
+    await editions.connect(minter).mint();
+    await expect(await editions.totalSupply()).to.be.equal(1);
+    await editions.connect(artist).mint();
+    await editions.connect(minter).mintAndTransfer([receiver.address, receiver.address]);
+    await expect(await editions.totalSupply()).to.be.equal(4);
   });
 
   it("ERC-721: token ownership", async function () { 
-    expect.fail('Not implemented');
+    await editions.connect(minter).mint();
+    await expect(await editions.ownerOf(1)).to.be.equal(minter.address);
+
+    await expect(editions.ownerOf(2))
+      .to.be.revertedWith("ERC721: owner query for nonexistent token");
+    await editions.connect(artist).mint();
+    await expect(await editions.ownerOf(2)).to.be.equal(artist.address);
   });
 
   it("ERC-721: token approve", async function () {
@@ -404,18 +415,62 @@ describe("MintableEditions", function () {
 
 
   it("ERC-721: token burn", async function () { 
-    expect.fail('Not implemented');
+    await editions.connect(minter).mint();
+    await expect(editions.connect(artist).burn(1)).to.be.revertedWith("Not approved");
+    await expect(editions.connect(minter).burn(1));
   });
   
   it("ERC-721: token URI (static content)", async function () { 
-    expect.fail('Not implemented');
+    const receipt = await (await factory.connect(artist).create(
+      "Roberto",
+      "RLG",
+      "**Me**, _myself_ and I.",
+      "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
+      "0x05db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
+      "",
+      500,
+      150,
+      [])).wait();
+    let contract:MintableEditions;
+    for (const event of receipt.events!) {
+      if (event.event === "CreatedEditions") {
+        contract = (await ethers.getContractAt("MintableEditions", event.args![4])) as MintableEditions;
+      }
+    }
+    await contract!.connect(artist).mint();
+    const encode = (str: string):string => Buffer.from(str, 'binary').toString('base64');
+    expect(await contract!.tokenURI(1))
+      .to.be.equal("data:application/json;base64," + encode('{"name":"Roberto 1/500","description":"**Me**, _myself_ and I.","image":"ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d?id=1","properties":{"number":1,"name":"Roberto"}}'));
   });
   
   it("ERC-721: token URI (animated content)", async function () { 
-    expect.fail('Not implemented');
+    const receipt = await (await factory.connect(artist).create(
+      "Roberto",
+      "RLG",
+      "**Me**, _myself_ and I.",
+      "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
+      "0x05db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
+      "https://i.imgur.com/FjT55Ou.jpg",
+      500,
+      150,
+      [])).wait();
+    let contract:MintableEditions;
+    for (const event of receipt.events!) {
+      if (event.event === "CreatedEditions") {
+        contract = (await ethers.getContractAt("MintableEditions", event.args![4])) as MintableEditions;
+      }
+    }
+    await contract!.connect(artist).mint();
+    const encode = (str: string):string => Buffer.from(str, 'binary').toString('base64');
+    expect(await contract!.tokenURI(1))
+      .to.be.equal("data:application/json;base64," + encode('{"name":"Roberto 1/500","description":"**Me**, _myself_ and I.","image":"https://i.imgur.com/FjT55Ou.jpg?id=1","animation_url":"ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d?id=1","properties":{"number":1,"name":"Roberto"}}'));
   });
   
   it("ERC-2981: royaltyInfo", async function () { 
-    expect.fail('Not implemented');
+    await editions.connect(minter).mint();
+    expect(await editions.royaltyInfo(1, ethers.utils.parseEther("1.0")))
+      .to.be.deep.equal([artist.address, ethers.utils.parseEther("0.015")])
+    expect(await editions.royaltyInfo(2, ethers.utils.parseEther("1.0")))
+      .to.be.deep.equal([artist.address, ethers.utils.parseEther("0.015")])
   });
 });
