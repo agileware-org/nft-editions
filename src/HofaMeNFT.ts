@@ -73,24 +73,45 @@ export class HofaMeNFT {
 		return editions.toString();
 	}
 
+	// Fetch Edition price
+	// @param editionID
+	public async fetchPrice(editionId:number): Promise<number> {
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		const price = await edition.price();
+		let Sprice = price.toString();
+		return Number(Sprice);
+	}
+
+	// verify if signer can mint a MeNFT
+	// @param editionID
+	// @param signer
+	public async isMintAllow(editionId:number): Promise<boolean> {
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		// let TotShare = await edition.shares();
+		// console.log(edition);
+		// console.log(TotShare);
+		// return await edition._isAllowedToMint();
+		return true;
+	}
+
 	// Generate Hash from content
 	// @param content
 	private async _generateCHash(content:string):Promise<string>{
 		// const contentData = await IPFS.create();
-			/*
-			const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
-			let data = "";
-			for await (const chunk of stream) {
-				if (chunk) {
-					data += chunk.toString();
-				}
+		/*
+		const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
+		let data = "";
+		for await (const chunk of stream) {
+			if (chunk) {
+				data += chunk.toString();
 			}
-			let data = readFileSync('./test.mp4','utf8');
-			*/
-			let crypto = require("crypto");
-			let hashHex = crypto.createHash("sha256").update(content).digest('hex');
-			// sha256 convert
-			return "0x" + hashHex.toString();
+		}
+		let data = readFileSync('./test.mp4','utf8');
+		*/
+		let crypto = require("crypto");
+		let hashHex = crypto.createHash("sha256").update(content).digest('hex');
+		// sha256 convert
+		return "0x" + hashHex.toString();
 	}
 
 	// purchase a MeNFT by it's id
@@ -98,15 +119,20 @@ export class HofaMeNFT {
 	// @parma value
 	public async purchase(editionId:number, value:string): Promise<string> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		const tx = await (await edition.purchase({value: ethers.utils.parseEther(value)})).wait();
-		return new Promise((resolve, reject) => {
-			for (const log of tx.events!) {
-				if (log.event === "EditionSold") {
-					resolve(log.transactionHash);
+		const price = await edition.price();
+		let sPrice = Number(price.toString());
+		if (sPrice > 0) {
+			const tx = await (await edition.purchase({value: ethers.utils.parseEther(value)})).wait();
+			return new Promise((resolve, reject) => {
+				for (const log of tx.events!) {
+					if (log.event === "EditionSold") {
+						resolve(log.transactionHash);
+					}
 				}
-			}
-			reject("Event `purchase` not found");
-		});
+				reject("Event `purchase` not found");
+			});
+		}
+		return "Cannot purchase editions, price = 0";
 	}
 
 	// mint a MeNFT by it's id

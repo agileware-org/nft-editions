@@ -15,9 +15,10 @@ describe.only('On HofaMeNFT', () => {
 	let receiver: SignerWithAddress;
 	let purchaser: SignerWithAddress;
 	let minter: SignerWithAddress;
+	let signer: SignerWithAddress;
 
 	beforeEach(async () => {
-		[artist, shareholder, curator, receiver, purchaser, minter] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
+		[artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
 		hofa = new HofaMeNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
 	})
 
@@ -32,7 +33,7 @@ describe.only('On HofaMeNFT', () => {
 				symbol: "LELE",
 				description: "My very first MeNFT",
 				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-				contentHash: "0x0000000000000000000000000000000";
+				contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				size: 1000,
 				royalties: 250,
 				shares: [{ holder:curator.address, bps:100 }],
@@ -44,6 +45,32 @@ describe.only('On HofaMeNFT', () => {
 			// then
 			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
 			expect(await editions.connect(artist).contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
+		})
+		it("should set and retrive price of a MeNFT", async () => {
+			const editions = await hofa.get(0);
+			editions.connect(artist);
+			const test = await hofa.fetchPrice(0);
+			console.log(test);
+			/*
+			await expect(await hofa.fetchPrice(0))
+				.to.emit(editions, "")
+				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+
+			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
+			*/
+		})
+		it("should verify if signer can mint a MeNFT", async () => {
+			const editions = await hofa.get(0);
+			editions.connect(artist);
+			const test = await hofa.isMintAllow(0);
+			console.log(test);
+			/*
+			await expect(await hofa.fetchPrice(0))
+				.to.emit(editions, "")
+				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+
+			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
+			*/
 		})
 		it("Artist can mint for self", async function () {
 			const editionsNum = await hofa.instances();
@@ -86,7 +113,6 @@ describe.only('On HofaMeNFT', () => {
 		});
 		it("should purchase a MeNFT", async () => {
 			const editions = await hofa.get(0);
-			// await editions.setApprovedMinters([{minter: receiver.address, amount: 50}, {minter: minter.address, amount: 50}]);
                         editions.connect(purchaser);
 			editions.setPrice(ethers.utils.parseEther("1.0"));
 			await expect(await hofa.purchase(0, "1.0"))
