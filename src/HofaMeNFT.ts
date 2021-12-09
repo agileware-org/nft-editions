@@ -1,5 +1,4 @@
 const { expect } = require("chai");
-//const IPFS = require('ipfs-core');
 const { ethers } = require("hardhat");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
@@ -37,10 +36,10 @@ export class HofaMeNFT {
 		}
 	}
 
+	// Write functions
 	// Creates a new MeNFT
 	// @param info
 	public async create(info:MeNFTInfo): Promise<MintableEditions> {
-		const contentHashCalculate = await this._generateCHash(info.contentUrl); // TO DO: to be computed
 		if (!info.thumbnailUrl) {
 			info.thumbnailUrl = "";
 		}
@@ -186,26 +185,6 @@ export class HofaMeNFT {
 			for 
 		}
 		*/
-	}
-
-	// Generate Hash from content
-	// @param content
-	private async _generateCHash(content:string):Promise<string>{
-		// const contentData = await IPFS.create();
-		/*
-		const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
-		let data = "";
-		for await (const chunk of stream) {
-			if (chunk) {
-				data += chunk.toString();
-			}
-		}
-		let data = readFileSync('./test.mp4','utf8');
-		*/
-		let crypto = require("crypto");
-		let hashHex = crypto.createHash("sha256").update(content).digest('hex');
-		// sha256 convert
-		return "0x" + hashHex.toString();
 	}
 	/////////////////////////////////////////////////////////
 }
