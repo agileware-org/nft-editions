@@ -37,9 +37,8 @@ export class HofaMeNFT {
 		}
 	}
 
-	/**
-	 * Creates a new MeNFT
-	 */ 
+	// Creates a new MeNFT
+	// @param info
 	public async create(info:MeNFTInfo): Promise<MintableEditions> {
 		const contentHashCalculate = await this._generateCHash(info.contentUrl); // TO DO: to be computed
 		if (!info.thumbnailUrl) {
@@ -57,67 +56,6 @@ export class HofaMeNFT {
 			}
 			reject("Event `CreatedEditions` not found");
 		});
-	}
-
-	// MintableEditionsFactory functions
-	/**
-	 * Retrieves a MeNFT by it's id
-	 */
-	public async get(id: number): Promise<MintableEditions>{
-		return MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
-	}
-
-	// Retrieves a total MeNFT 
-	public async instances(): Promise<string>{
-		const editions = await this.factory.instances();
-		return editions.toString();
-	}
-
-	// Fetch Edition price
-	// @param editionID
-	public async fetchPrice(editionId:number): Promise<number> {
-		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		const price = await edition.price();
-		let Sprice = price.toString();
-		return Number(Sprice);
-	}
-
-	// verify if signer can mint a MeNFT
-	// @param editionID
-	// @param signer
-	public async isMintAllow(editionId:number, address:string): Promise<boolean> {
-		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		let AllowedMinters = await edition.allowedMinters(address);
-		if (AllowedMinters > 0) {
-			return true;
-		} else {
-			return false;
-		}
-		/*
-		return new Promise((resolve, reject) => {
-			for 
-		}
-		*/
-	}
-
-	// Generate Hash from content
-	// @param content
-	private async _generateCHash(content:string):Promise<string>{
-		// const contentData = await IPFS.create();
-		/*
-		const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
-		let data = "";
-		for await (const chunk of stream) {
-			if (chunk) {
-				data += chunk.toString();
-			}
-		}
-		let data = readFileSync('./test.mp4','utf8');
-		*/
-		let crypto = require("crypto");
-		let hashHex = crypto.createHash("sha256").update(content).digest('hex');
-		// sha256 convert
-		return "0x" + hashHex.toString();
 	}
 
 	// purchase a MeNFT by it's id
@@ -183,7 +121,6 @@ export class HofaMeNFT {
 		});
 	}
 
-
 	// Multiple mint for many address a MeNFT by it's id
 	// @param editionsId
 	// @param recipients
@@ -205,4 +142,71 @@ export class HofaMeNFT {
 			reject("Event `mintMultiple` not found");
 		});
 	}
+	//////////////////////////////////////////
+
+	// MintableEditionsFactory functions
+	// Retrieves a MeNFT by it's id
+	// @param id
+	public async get(id: number): Promise<MintableEditions>{
+		return MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
+	}
+
+	// Retrieves a total MeNFT 
+	public async instances(): Promise<string>{
+		const editions = await this.factory.instances();
+		return editions.toString();
+	}
+	////////////////////////////////////////////
+
+	// Read functions
+	// Fetch Edition price
+	// @param editionID
+	public async fetchPrice(editionId:number): Promise<number> {
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		const price = await edition.price();
+		let Sprice = price.toString();
+		return Number(Sprice);
+	}
+	////////////////////////////////////////////
+
+	// Miscellaneous functions
+	// verify if signer can mint a MeNFT
+	// @param editionID
+	// @param signer
+	public async isMintAllow(editionId:number, address:string): Promise<boolean> {
+		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+		let AllowedMinters = await edition.allowedMinters(address);
+		if (AllowedMinters > 0) {
+			return true;
+		} else {
+			return false;
+		}
+		/*
+		return new Promise((resolve, reject) => {
+			for 
+		}
+		*/
+	}
+
+	// Generate Hash from content
+	// @param content
+	private async _generateCHash(content:string):Promise<string>{
+		// const contentData = await IPFS.create();
+		/*
+		const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
+		let data = "";
+		for await (const chunk of stream) {
+			if (chunk) {
+				data += chunk.toString();
+			}
+		}
+		let data = readFileSync('./test.mp4','utf8');
+		*/
+		let crypto = require("crypto");
+		let hashHex = crypto.createHash("sha256").update(content).digest('hex');
+		// sha256 convert
+		return "0x" + hashHex.toString();
+	}
+	/////////////////////////////////////////////////////////
 }
+
