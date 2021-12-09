@@ -213,22 +213,21 @@ describe("MintableEditions", function () {
       .to.be.revertedWith("Not for sale");
   });
 
-/* WIP andrea, unexpected error
-  it("Artist only can update content URL, but only to non empty value", async function () { 
+ it("Artist only can update content URL, but only to non empty value", async function () { 
     editions.connect(artist);
-    await editions.updateEditionsURLs([{ _contentUrl: "https://ipfs.io/ipfs/newContenturl" , _thumbnailUrl: "https://ipfs.io/ipfs/newThumbnailurl" }]);
+    await editions.updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl" , "https://ipfs.io/ipfs/newThumbnailUrl");
     expect(await editions.contentUrl()).to.be.equal("https://ipfs.io/ipfs/newContentUrl");
     expect(await editions.thumbnailUrl()).to.be.equal("https://ipfs.io/ipfs/newThumbnailUrl");
-    await expect(editions.connect(minter).updateEditionsURLs([{_contentUrl: "https://ipfs.io/ipfs/newContentUrl2", _thumbnailUrl: "https://ipfs.io/ipfs/newThumbnailUrl2"}])).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(editions.connect(purchaser).updateEditionsURLs([{_contentUrl: "https://ipfs.io/ipfs/newContentUrl2", _thumbnailUrl: "https://ipfs.io/ipfs/newThumbnailUrl2"}])).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(editions.connect(receiver).updateEditionsURLs([{_contentUrl: "https://ipfs.io/ipfs/newContentUrl2", _thumbnailUrl: "https://ipfs.io/ipfs/newThumbnailUrl2"}])).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(minter).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2",  "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(purchaser).updateEditionsURLs( "https://ipfs.io/ipfs/newContentUrl2",  "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(editions.connect(receiver).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
     expect(await editions.contentUrl()).to.be.equal("https://ipfs.io/ipfs/newContentUrl");
     expect(await editions.thumbnailUrl()).to.be.equal("https://ipfs.io/ipfs/newThumbnailUrl");
     editions.connect(artist);
-    expect(await editions.updateEditionsURLs([{_contentUrl: "", _thumbnailUrl: "https://ipfs.io/ipfs/newThumbnailUrl"}])).to.be.revertedWith("Empty content URL");
-  
+    await expect(editions.updateEditionsURLs("", "https://ipfs.io/ipfs/newThumbnailUrl")).to.be.revertedWith("Empty content URL");
+    
   });
-*/
+  
   it("Artist only can update thumbnail URL, also to empty value", async function () { 
     await editions.connect(artist);
     await editions.updateEditionsURLs("ipfs://content", "ipfs://thumbnail");
@@ -244,7 +243,7 @@ describe("MintableEditions", function () {
     await editions.updateEditionsURLs("ipfs://content.new", "");
     await expect(await editions.thumbnailUrl()).to.be.equal("");
   });
-
+//WIP
   it("Artist can withdraw its shares", async function () { 
     expect.fail('Not implemented');
   });
