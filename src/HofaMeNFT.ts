@@ -1,5 +1,4 @@
 const { expect } = require("chai");
-//const IPFS = require('ipfs-core');
 const { ethers } = require("hardhat");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
