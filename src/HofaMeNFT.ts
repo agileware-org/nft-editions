@@ -85,13 +85,19 @@ export class HofaMeNFT {
 	// verify if signer can mint a MeNFT
 	// @param editionID
 	// @param signer
-	public async isMintAllow(editionId:number): Promise<boolean> {
+	public async isMintAllow(editionId:number, address:string): Promise<boolean> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		// let TotShare = await edition.shares();
-		// console.log(edition);
-		// console.log(TotShare);
-		// return await edition._isAllowedToMint();
-		return false;
+		let AllowedMinters = await edition.allowedMinters(address);
+		if (AllowedMinters > 0) {
+			return true;
+		} else {
+			return false;
+		}
+		/*
+		return new Promise((resolve, reject) => {
+			for 
+		}
+		*/
 	}
 
 	// Generate Hash from content

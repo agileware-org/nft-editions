@@ -63,7 +63,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     EditionsMetadataHelper private immutable metadata;
 
     // addresses allowed to mint editions
-    mapping(address => uint16) internal allowedMinters;
+    mapping(address => uint16) public allowedMinters;
 
     // price for sale
     uint256 public price;
@@ -183,6 +183,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         _withdraw(payable(msg.sender));
     }
 
+    function withdrawable(address payable _account) external view returns (uint256) {
+        uint256 _totalReceived = address(this).balance + withdrawn;
+        return (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
+    }
+
     /**
      * This operation attempts to transfer part of the contract balance to the caller, provided the account is a shareholder and
      * on the basis of its shares and previous witdrawals.
@@ -190,8 +195,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @param _account the address of the shareholder to pay out
      */
     function _withdraw(address payable _account) internal {
-        uint256 _totalReceived = address(this).balance + withdrawn;
-        uint256 _amount = (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
+        uint256 _amount = this.withdrawable(_account);
         require(_amount != 0, "Account is not due payment");
         witdrawals[_account] += _amount;
         withdrawn += _amount;

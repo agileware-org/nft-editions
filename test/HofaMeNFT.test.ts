@@ -63,8 +63,11 @@ describe.only('On HofaMeNFT', () => {
 		it("should verify if signer can mint a MeNFT", async () => {
 			const editions = await hofa.get(0);
 			editions.connect(artist);
-			const test = await hofa.isMintAllow(0);
-			//console.log(test);
+			let test = await hofa.isMintAllow(0, signer.address);
+			// console.log(test);
+			await editions.setApprovedMinters([{minter: signer.address, amount: 50}]);
+			test = await hofa.isMintAllow(0, signer.address);
+			// console.log(test);
 			await expect(test).to.equal(true);
 			/*
 			await expect(await hofa.fetchPrice(0))
