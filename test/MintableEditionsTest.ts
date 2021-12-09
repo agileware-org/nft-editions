@@ -243,9 +243,26 @@ describe("MintableEditions", function () {
     await editions.updateEditionsURLs("ipfs://content.new", "");
     await expect(await editions.thumbnailUrl()).to.be.equal("");
   });
-//WIP
+
   it("Artist can withdraw its shares", async function () { 
-    expect.fail('Not implemented');
+     await editions.connect(artist);
+      await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
+      .to.emit(editions, "PriceChanged")
+      .withArgs(ethers.utils.parseEther("1.0"));
+      
+      await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
+      
+     await editions.connect(artist);
+     await editions.withdraw();
+     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.05"));
+     await expect(editions.connect(artist).withdraw()).to.be.revertedWith("Account is not due payment");
+     await expect(editions.connect(minter).withdraw()).to.be.revertedWith("Account is not due payment");
+     await expect(editions.connect(purchaser).withdraw()).to.be.revertedWith("Account is not due payment");
+     await expect(editions.connect(receiver).withdraw()).to.be.revertedWith("Account is not due payment");
+     
   });
 
   it("Artist without pending payment cannot withdraw", async function () { 
