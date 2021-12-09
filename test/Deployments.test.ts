@@ -1,5 +1,4 @@
-const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
+const {ethers} = require("hardhat");
 
 import "@nomiclabs/hardhat-ethers";
 
@@ -13,7 +12,7 @@ describe("Deployments", function () {
     const editionsTemplate = await MintableEditions.deploy(metadata.address);
 
     const MintableEditionsFactory = await ethers.getContractFactory("MintableEditionsFactory");
-    const factory = await MintableEditionsFactory.deploy(editionsTemplate.address);
+    await MintableEditionsFactory.deploy(editionsTemplate.address);
   });
 
   it("Should deploy SplitterFactory contracts", async function () {
@@ -24,7 +23,7 @@ describe("Deployments", function () {
     const shakeableSplitter = await ShakeableSplitter.deploy();
 
     const SplitterFactory = await ethers.getContractFactory("SplitterFactory");
-    const pushSplitterFactory = await SplitterFactory.deploy(pushSplitter.address);
-    const shakeableSplitterFactory = await SplitterFactory.deploy(shakeableSplitter.address);
+    await SplitterFactory.deploy(pushSplitter.address);
+    await SplitterFactory.deploy(shakeableSplitter.address);
   });
 });

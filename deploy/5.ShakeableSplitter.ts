@@ -2,11 +2,11 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const {deployments, run, getNamedAccounts} = hre;
-  const {deploy, get} = deployments;
+  const {deployments, getNamedAccounts} = hre;
+  const {deploy} = deployments;
   const {deployer} = await getNamedAccounts();
 
-  const deployed = await deploy('ShakeableSplitter', {
+  await deploy('ShakeableSplitter', {
     from: deployer,
     log: true,
   });
