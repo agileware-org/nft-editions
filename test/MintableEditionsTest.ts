@@ -274,7 +274,22 @@ describe("MintableEditions", function () {
   });
 
   it("Shareholders can withdraw their shares", async function () { 
-    expect.fail('Not implemented');
+     await editions.connect(artist);
+      await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
+      .to.emit(editions, "PriceChanged")
+      .withArgs(ethers.utils.parseEther("1.0"));
+      
+      await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
+      .to.emit(editions, "Transfer")
+      .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
+      
+     await editions.connect(shareholder).withdraw();
+     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.95"));
+     await expect(editions.connect(shareholder).withdraw()).to.be.revertedWith("Account is not due payment");
+     await expect(editions.connect(minter).withdraw()).to.be.revertedWith("Account is not due payment");
+     await expect(editions.connect(purchaser).withdraw()).to.be.revertedWith("Account is not due payment");
+     await expect(editions.connect(receiver).withdraw()).to.be.revertedWith("Account is not due payment");
   });
 
   it("Shareholders without pending payment cannot withdraw", async function () { 
