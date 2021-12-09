@@ -28,7 +28,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     
     event PriceChanged(uint256 amount);
     event EditionSold(uint256 price, address owner);
-    event PaymentFailed(address to);
+    event SharesPaid(address to, uint256 amount);
 
     struct Shares {
         address payable holder;
@@ -74,7 +74,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
 
     // shares withdrawals
     uint256 private withdrawn;
-    mapping(address => uint256) private witdrawals;
+    mapping(address => uint256) private withdrawals;
 
     constructor(EditionsMetadataHelper _metadata) initializer {
         metadata = _metadata;
@@ -185,21 +185,22 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
 
     function withdrawable(address payable _account) external view returns (uint256) {
         uint256 _totalReceived = address(this).balance + withdrawn;
-        return (_totalReceived * shares[_account]) / 10_000 - witdrawals[_account];
+        return (_totalReceived * shares[_account]) / 10_000 - withdrawals[_account];
     }
 
     /**
      * This operation attempts to transfer part of the contract balance to the caller, provided the account is a shareholder and
-     * on the basis of its shares and previous witdrawals.
+     * on the basis of its shares and previous withdrawals.
      *
      * @param _account the address of the shareholder to pay out
      */
     function _withdraw(address payable _account) internal {
         uint256 _amount = this.withdrawable(_account);
         require(_amount != 0, "Account is not due payment");
-        witdrawals[_account] += _amount;
+        withdrawals[_account] += _amount;
         withdrawn += _amount;
         AddressUpgradeable.sendValue(_account, _amount);
+        emit SharesPaid(_account, _amount);
     }
 
     /**
