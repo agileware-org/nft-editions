@@ -1,7 +1,6 @@
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
-import { BigNumber } from "@ethersproject/bignumber";
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -11,19 +10,21 @@ import {
 
 describe("MintableEditions", function () {
   let artist: SignerWithAddress;
+  let curator: SignerWithAddress;
   let shareholder: SignerWithAddress;
   let buyer: SignerWithAddress;
   let minter: SignerWithAddress;
   let receiver: SignerWithAddress;
   let purchaser: SignerWithAddress;
   let editions: MintableEditions;
+  let factory: MintableEditionsFactory;
   
   
   beforeEach(async () => {
-    [artist, shareholder, buyer, minter, receiver, purchaser] = await ethers.getSigners();
+    [artist, curator, shareholder, buyer, minter, receiver, purchaser] = await ethers.getSigners();
     const { MintableEditionsFactory } = await deployments.fixture(["Editions"]);
-    const factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
-    const receipt = await (await factory.create(
+    factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
+    const receipt = await (await factory.connect(artist).create(
       "Roberto Lo Giacco",
       "RLG",
       "**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)",
@@ -32,7 +33,7 @@ describe("MintableEditions", function () {
       "",
       2500,
       150,
-      [{holder: (await shareholder.getAddress()) as string, bps: 500}]
+      [{holder: (await curator.getAddress()) as string, bps: 1000}, {holder: (await shareholder.getAddress()) as string, bps: 500}]
     )).wait();
     for (const event of receipt.events!) {
       if (event.event === "CreatedEditions") {
@@ -42,8 +43,11 @@ describe("MintableEditions", function () {
     }
   });
 
+  it("Artist shares are calculated corrrectly", async function () {
+    expect(await editions.shares(await artist.getAddress())).to.be.equal(8500);
+  });
+
   it("Artist can mint for self", async function () {
-    editions.connect(artist);
     await expect(editions.mint())
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, artist.address, 1);
@@ -53,7 +57,6 @@ describe("MintableEditions", function () {
   });
 
   it("Artist can mint for someone", async function () {
-    editions.connect(artist);
     await expect(editions.mintAndTransfer([receiver.address]))
       .to.emit(editions, "Transfer")
       .withArgs(ethers.constants.AddressZero, receiver.address, 1);
@@ -63,7 +66,6 @@ describe("MintableEditions", function () {
   });
 
   it("Artist can mint for others", async function () {
-    editions.connect(artist);
     let recipients = new Array<string>(10);
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = receiver.address;
@@ -76,7 +78,6 @@ describe("MintableEditions", function () {
   });
 
   it("Artist only can allow minters", async function () {
-    editions.connect(artist);
     await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
     await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 50}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 50}])).to.be.revertedWith("Ownable: caller is not the owner");
@@ -84,7 +85,6 @@ describe("MintableEditions", function () {
   });
 
   it("Artist only can revoke allowed minters", async function () {
-    editions.connect(artist);
     await editions.setApprovedMinters([{minter: minter.address, amount: 0}]);
     await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
@@ -93,9 +93,11 @@ describe("MintableEditions", function () {
   });
 
   it("Artist only can reduce/increase allowances to minters", async function () {
-    editions.connect(artist);
+    expect(await editions.allowedMinters(minter.address)).to.be.equal(50);
     await editions.setApprovedMinters([{minter: minter.address, amount: 10}]);
+    expect(await editions.allowedMinters(minter.address)).to.be.equal(10);
     await editions.setApprovedMinters([{minter: minter.address, amount: 51}]);
+    expect(await editions.allowedMinters(minter.address)).to.be.equal(51);
     await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 39}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 2}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 60}])).to.be.revertedWith("Ownable: caller is not the owner");
@@ -148,7 +150,6 @@ describe("MintableEditions", function () {
   });
   
    it("Revoked minters cannot mint for self or others", async function () {
-    editions.connect(artist);
     await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
     await expect(editions.connect(minter).mint()).to.emit(editions, "Transfer");
     await expect(await editions.totalSupply()).to.be.equal(1);
@@ -214,7 +215,6 @@ describe("MintableEditions", function () {
   });
 
  it("Artist only can update content URL, but only to non empty value", async function () { 
-    editions.connect(artist);
     await editions.updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl" , "https://ipfs.io/ipfs/newThumbnailUrl");
     expect(await editions.contentUrl()).to.be.equal("https://ipfs.io/ipfs/newContentUrl");
     expect(await editions.thumbnailUrl()).to.be.equal("https://ipfs.io/ipfs/newThumbnailUrl");
@@ -223,13 +223,12 @@ describe("MintableEditions", function () {
     await expect(editions.connect(receiver).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
     expect(await editions.contentUrl()).to.be.equal("https://ipfs.io/ipfs/newContentUrl");
     expect(await editions.thumbnailUrl()).to.be.equal("https://ipfs.io/ipfs/newThumbnailUrl");
-    editions.connect(artist);
+
     await expect(editions.updateEditionsURLs("", "https://ipfs.io/ipfs/newThumbnailUrl")).to.be.revertedWith("Empty content URL");
     
   });
   
   it("Artist only can update thumbnail URL, also to empty value", async function () { 
-    await editions.connect(artist);
     await editions.updateEditionsURLs("ipfs://content", "ipfs://thumbnail");
     await expect(await editions.thumbnailUrl()).to.be.equal("ipfs://thumbnail");
     
@@ -245,74 +244,113 @@ describe("MintableEditions", function () {
   });
 
   it("Artist can withdraw its shares", async function () { 
-     await editions.connect(artist);
-      await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
-      .to.emit(editions, "PriceChanged")
-      .withArgs(ethers.utils.parseEther("1.0"));
-      
-      await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
-      .to.emit(editions, "Transfer")
-      .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
-      
-     await editions.connect(artist);
-     await editions.withdraw();
-     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.05"));
-     await expect(editions.connect(artist).withdraw()).to.be.revertedWith("Account is not due payment");
-     
+    
+    const before = await artist.getBalance();
+    await expect(editions.withdraw())
+      .to.emit(editions, "SharesPaid")
+      .withArgs(artist.address, ethers.utils.parseEther(".85"));
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.15"));
+    await expect((await artist.getBalance()).sub(before))
+      .to.be.within(ethers.utils.parseEther("0.84"), ethers.utils.parseEther("0.85"));
   });
 
   it("Artist without pending payment cannot withdraw", async function () { 
-    expect.fail('Not implemented');
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await expect(editions.connect(artist).withdraw()).to.be.revertedWith("Account is not due payment");
+
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await expect(editions.connect(artist).withdraw());
+    await expect(editions.connect(artist).withdraw()).to.be.revertedWith("Account is not due payment");
   });
 
   it("Artist withdrawing multiple times respect its global shares", async function () { 
-    expect.fail('Not implemented');
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    const before = await artist.getBalance();
+
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await editions.connect(artist).withdraw();
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.15"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await editions.connect(artist).withdraw();
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.30"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await editions.connect(artist).withdraw();
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.45"));
   });
 
   it("Shareholders can withdraw their shares", async function () { 
-     await editions.connect(artist);
-      await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
-      .to.emit(editions, "PriceChanged")
-      .withArgs(ethers.utils.parseEther("1.0"));
-      
-      await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
-      .to.emit(editions, "Transfer")
-      .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+
     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
-      
-     await editions.connect(shareholder).withdraw();
-     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.95"));
-     await expect(editions.connect(shareholder).withdraw()).to.be.revertedWith("Account is not due payment");
-     
+    const before = await shareholder.getBalance();
+
+    await expect(editions.connect(shareholder).withdraw())
+      .to.emit(editions, "SharesPaid")
+      .withArgs(shareholder.address, ethers.utils.parseEther(".05"));
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.95"));
+    await expect((await shareholder.getBalance()).sub(before))
+      .to.be.within(ethers.utils.parseEther("0.04"), ethers.utils.parseEther("0.05"));
   });
 
   it("Shareholders without pending payment cannot withdraw", async function () { 
-    expect.fail('Not implemented');
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await expect(editions.connect(shareholder).withdraw()).to.be.revertedWith("Account is not due payment");
+
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await expect(editions.connect(shareholder).withdraw());
+    await expect(editions.connect(shareholder).withdraw()).to.be.revertedWith("Account is not due payment");
   });
 
   it("Shareholders withdrawing multiple times respect their global shares", async function () { 
-    expect.fail('Not implemented');
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await editions.connect(shareholder).withdraw();
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.95"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await expect(editions.connect(shareholder).withdraw()).to.changeEtherBalance;
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.90"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+    await editions.connect(shareholder).withdraw();
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("2.85"));
   });
 
   it("Artist and shareholders only can withdraw", async function () { 
-   await editions.connect(artist);
-      await expect(editions.setPrice(ethers.utils.parseEther("1.0")))
-      .to.emit(editions, "PriceChanged")
-      .withArgs(ethers.utils.parseEther("1.0"));
-      
-      await expect(editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")}))
-      .to.emit(editions, "Transfer")
-      .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+
     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
-     await expect(editions.connect(minter).withdraw()).to.be.revertedWith("Account is not due payment");
-     await expect(editions.connect(purchaser).withdraw()).to.be.revertedWith("Account is not due payment");
-     await expect(editions.connect(receiver).withdraw()).to.be.revertedWith("Account is not due payment");
+    await expect(editions.connect(minter).withdraw()).to.be.revertedWith("Account is not due payment");
+    await expect(editions.connect(purchaser).withdraw()).to.be.revertedWith("Account is not due payment");
+    await expect(editions.connect(receiver).withdraw()).to.be.revertedWith("Account is not due payment");
     await expect(editions.connect(buyer).withdraw()).to.be.revertedWith("Account is not due payment");
+    await expect(await editions.connect(shareholder).withdraw())
+      .to.changeEtherBalance(shareholder, ethers.utils.parseEther(".05"));
+    await expect(await editions.connect(artist).withdraw())
+      .to.changeEtherBalance(artist, ethers.utils.parseEther(".85"));
+    await expect(await editions.connect(curator).withdraw())
+      .to.changeEtherBalance(curator, ethers.utils.parseEther(".10"));
+    
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.0"));
   });
 
   it("Anyone can shake the contract", async function () { 
-    expect.fail('Not implemented');
+    await editions.setPrice(ethers.utils.parseEther("1.0"));
+    await editions.connect(purchaser).purchase({value: ethers.utils.parseEther("1.0")});
+
+    await expect(editions.connect(purchaser).shake())
+      .to.emit(editions, "SharesPaid")
+      .withArgs(shareholder.address, ethers.utils.parseEther(".05"))
+      .and.to.emit(editions, "SharesPaid")
+      .withArgs(curator.address, ethers.utils.parseEther(".10"))
+      .and.to.emit(editions, "SharesPaid")
+      .withArgs(artist.address, ethers.utils.parseEther(".85"));
+
+    await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.0"));
   });
 
   it("ERC-721: totalSupply increases upon minting", async function () { 
@@ -323,28 +361,45 @@ describe("MintableEditions", function () {
     expect.fail('Not implemented');
   });
 
-  it("ERC-721: token approve", async function () { 
-    await expect(editions.mintAndTransfer([receiver.address]))
-      .to.emit(editions, "Transfer");
+  it("ERC-721: token approve", async function () {
+    await editions.connect(minter).mint();
+    await editions.connect(minter).mint();
     
     await expect(editions.connect(artist).approve(minter.address, 1))
+      .to.be.revertedWith("ERC721: approval to current owner");
+
+    await expect(editions.connect(artist).approve(receiver.address, 1))
       .to.be.revertedWith("ERC721: approve caller is not owner nor approved for all");
     
-    await expect(editions.connect(receiver).approve(minter.address, 1))
+    await expect(editions.connect(minter).approve(receiver.address, 2))
       .to.emit(editions, "Approval")
-      .withArgs(receiver.address, minter.address, 1);
+      .withArgs(minter.address, receiver.address, 2);
+
+    await expect(editions.connect(minter).approve(receiver.address, 3))
+      .to.be.revertedWith("ERC721: owner query for nonexistent token");
   });
 
   it("ERC-721: token approveForAll", async function () { 
-    await expect(editions.connect(artist).setApprovalForAll(receiver.address, true))
-      .to.emit(editions, "ApprovalForAll")
-      .withArgs(artist.address, receiver.address, true);
+    await editions.connect(minter).mint();
     
-    await expect(editions.connect(minter).setApprovalForAll(receiver.address, false))
+    await expect(editions.connect(minter).setApprovalForAll(receiver.address, true))
       .to.emit(editions, "ApprovalForAll")
-      .withArgs(minter.address, receiver.address, false);
+      .withArgs(minter.address, receiver.address, true);
     
-    await expect(await editions.totalSupply()).to.be.equal(0);
+    await editions.connect(minter).mint();
+
+    await expect(editions.connect(receiver).transferFrom(minter.address, purchaser.address, 1))
+      .to.emit(editions, "Transfer")
+      .withArgs(minter.address, purchaser.address, 1);
+    
+    await expect(editions.connect(artist).transferFrom(minter.address, purchaser.address, 1))
+      .to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+
+    await expect(editions.connect(receiver).transferFrom(minter.address, curator.address, 2))
+      .to.emit(editions, "Transfer")
+      .withArgs(minter.address, curator.address, 2);
+
+    await expect(await editions.totalSupply()).to.be.equal(2);
   });
 
 
