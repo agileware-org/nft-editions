@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { HofaMeNFT, MeNFTInfo } from "../src/HofaMeNFT"
 import { MintableEditions } from "../typechain"
 
-describe.only('On HofaMeNFT', () => {
+describe('On HofaMeNFT', () => {
 	let hofa: HofaMeNFT;
 	let artist: SignerWithAddress;
 	let curator: SignerWithAddress;

@@ -2,7 +2,7 @@ const { expect } = require("chai");
 import { promises as fs } from 'fs'
 import { sha256FromBuf } from "../src/sha256Converter"
 
-describe.only('Hashing Utilities', () => {
+describe('Hashing Utilities', () => {
 	let Hash: string
 
 	beforeEach(() => {
