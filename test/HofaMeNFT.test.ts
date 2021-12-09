@@ -2,6 +2,8 @@ require("chai").use(require('chai-as-promised'));
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
+import { promises as fs } from 'fs'
+
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { HofaMeNFT, MeNFTInfo } from "../src/HofaMeNFT"
@@ -128,5 +130,12 @@ describe.only('On HofaMeNFT', () => {
 			// console.log(await editions.address);
 			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
 		})
+		it('it properly hashes from buffer', async () => {
+			const Hash = '0x8794e371f6e14027a4cd5434f2cf93cab35524d26f77a1abea3325821c6dfeff'
+			const buf = await fs.readFile('./test.mp4')
+			const hash = await hofa.sha256FromBuf(buf)
+			expect(hash).to.equal(Hash)
+		})
+		
 	})
 });

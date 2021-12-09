@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const crypto = require("crypto");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
 import { readFileSync, writeFileSync } from 'fs';
@@ -175,16 +176,22 @@ export class HofaMeNFT {
 	public async isMintAllow(editionId:number, address:string): Promise<boolean> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
 		let AllowedMinters = await edition.allowedMinters(address);
-		if (AllowedMinters > 0) {
-			return true;
-		} else {
-			return false;
-		}
-		/*
 		return new Promise((resolve, reject) => {
-			for 
-		}
-		*/
+			if (AllowedMinters > 0) {
+				resolve(true);
+			} else {
+				resolve(false);
+			}
+			reject("Event `isMintAllow` not found");
+		})
+	}
+
+	// Generates the sha256 hash from a buffer/string and returns the hash hex-encoded
+	// @param buffer
+	public async sha256FromBuf(buffer:Buffer): Promise<string> {
+		let bitArray = buffer.toString('hex');
+		let hashHex = crypto.createHash("sha256").update(bitArray).digest('hex');
+		return "0x".concat(hashHex.toString());
 	}
 	/////////////////////////////////////////////////////////
 }
