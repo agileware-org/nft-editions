@@ -1,5 +1,6 @@
 const { expect } = require("chai");
-const IPFS = require('ipfs-core');
+//const IPFS = require('ipfs-core');
+const { ethers } = require("hardhat");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
 import { readFileSync, writeFileSync } from 'fs';
@@ -57,6 +58,7 @@ export class HofaMeNFT {
 		});
 	}
 
+	// MintableEditionsFactory functions
 	/**
 	 * Retrieves a MeNFT by it's id
 	 */
@@ -64,10 +66,16 @@ export class HofaMeNFT {
 		return MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 	}
 
-	// Gnerate Hash from content
+	// Retrieves a total MeNFT 
+	public async instances(): Promise<string>{
+		const editions = await this.factory.instances();
+		return editions.toString();
+	}
+
+	// Generate Hash from content
 	// @param content
 	private async _generateCHash(content:string):Promise<string>{
-		const contentData = await IPFS.create();
+		// const contentData = await IPFS.create();
 			/*
 			const stream = contentData.cat(content.split("/")[content.split("/").length-1]);
 			let data = "";
@@ -78,47 +86,41 @@ export class HofaMeNFT {
 			}
 			let data = readFileSync('./test.mp4','utf8');
 			*/
-			
 			let crypto = require("crypto");
 			let hashHex = crypto.createHash("sha256").update(content).digest('hex');
 			// sha256 convert
-			console.log(hashHex);
 			return "0x" + hashHex.toString();
 	}
 
 	// purchase a MeNFT by it's id
 	// @param editionsId
 	// @parma value
-	/*
-	public async purchase(editionId:number, value:number): Promise<string> {
+	public async purchase(editionId:number, value:string): Promise<string> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		const price = await (await edition.price())
-		if ( price > 0) {
-			//const tx = await (await edition.purchase({value: ethers.utils.parseEther(value)})).wait();
-			const tx = await (await edition.purchase({value: value})).wait();
-			//const tx = await (await edition.purchase()).wait();
-			return new Promise((resolve, reject) => {
-				for (const log of tx.events!) {
-					if (log.event === "EditionSold") {
-						resolve(log.args![4]);
-					}
+		const tx = await (await edition.purchase({value: ethers.utils.parseEther(value)})).wait();
+		return new Promise((resolve, reject) => {
+			for (const log of tx.events!) {
+				if (log.event === "EditionSold") {
+					console.log(log);
+					//resolve(log.args![1]);
+					//resolve(log.address);
+					resolve(log.transactionHash);
 				}
-				reject("Event `purchase` not found");
-			});
-		}
-		return "Not for sale";
+			}
+			reject("Event `purchase` not found");
+		});
 	}
-	*/
 
 	// mint a MeNFT by it's id
 	// @param editionsId
 	public async mint(editionId:number):Promise<string>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-		const tx = await ( await edition.mint()).wait()
+		const tx = await(await edition.mint()).wait();
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
 				if (log.event === "Transfer") {
-					resolve(log.args![4]);
+					let res = log.transactionHash;
+					resolve(res);
 				}
 			}
 			reject("Event `mint` not found");
@@ -141,7 +143,7 @@ export class HofaMeNFT {
 			for (const log of tx.events!) {
 				console.log(log.event);
 				if (log.event === "Transfer") {
-					resolve(log.args![4]);
+					resolve(log.transactionHash);
 				}
 			}
 			reject("Event `mintMultiple` not found");
@@ -153,7 +155,7 @@ export class HofaMeNFT {
 	// @param editionsId
 	// @param recipients
 	// @param count - default 1
-	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<number>{
+	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number=1):Promise<string>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
 		let addresses: Array<string> = [];
 		for (const addr of recipients!){
@@ -163,11 +165,11 @@ export class HofaMeNFT {
 		}
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
 		return new Promise((resolve, reject) => {
-			for (const log of tx.events!) {
-				console.log(log.event);
-				if (log.event === "Transfer") {
-					resolve(log.args![4]);
-				}
+			let count = 0;
+			if (tx.events) {
+				const log = tx.events![tx.events.length-1];
+				console.log(log);
+				resolve(log.transactionHash);
 			}
 			reject("Event `mintMultiple` not found");
 		});
