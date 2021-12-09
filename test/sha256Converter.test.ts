@@ -12,6 +12,6 @@ describe.only('Hashing Utilities', () => {
 	it('it properly hashes from string', async () => {
 		const buf = await fs.readFile('./test.mp4')
 		const hash = sha256FromBuf(buf)
-		expect(sha256FromString(buff)).toBe(Hash)
+		expect(sha256FromBuf(buf)).to.equal(Hash)
 	})
 })
