@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+//const IPFS = require('ipfs-core');
 const { ethers } = require("hardhat");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
@@ -90,7 +91,7 @@ export class HofaMeNFT {
 		// console.log(edition);
 		// console.log(TotShare);
 		// return await edition._isAllowedToMint();
-		return true;
+		return false;
 	}
 
 	// Generate Hash from content

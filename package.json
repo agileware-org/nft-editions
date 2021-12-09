@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "NFT Editions Contracts",
   "main": "index.js",
-  "author": "ZORA",
-  "license": "GPL-3.0",
+  "author": "HOFA",
+  "license": "MIT",
   "private": false,
   "files": [
     "typechain",

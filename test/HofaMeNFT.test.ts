@@ -50,7 +50,8 @@ describe.only('On HofaMeNFT', () => {
 			const editions = await hofa.get(0);
 			editions.connect(artist);
 			const test = await hofa.fetchPrice(0);
-			console.log(test);
+			await expect(test).to.equal(1);
+			//console.log(test);
 			/*
 			await expect(await hofa.fetchPrice(0))
 				.to.emit(editions, "")
@@ -63,7 +64,8 @@ describe.only('On HofaMeNFT', () => {
 			const editions = await hofa.get(0);
 			editions.connect(artist);
 			const test = await hofa.isMintAllow(0);
-			console.log(test);
+			//console.log(test);
+			await expect(test).to.equal(true);
 			/*
 			await expect(await hofa.fetchPrice(0))
 				.to.emit(editions, "")
@@ -109,6 +111,7 @@ describe.only('On HofaMeNFT', () => {
 			const artistBalance = await editions.balanceOf(artist.address);
 			const TotalBalance = receiverBalance.toNumber() + artistBalance.toNumber();
 			const eSupply = await editions.totalSupply();
+			// console.log(await editions.address);
 			await expect(await editions.totalSupply()).to.equal(TotalBalance);
 		});
 		it("should purchase a MeNFT", async () => {
@@ -119,6 +122,7 @@ describe.only('On HofaMeNFT', () => {
 				.to.emit(editions, "Transfer")
 				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
 
+			// console.log(await editions.address);
 			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
 		})
 	})
