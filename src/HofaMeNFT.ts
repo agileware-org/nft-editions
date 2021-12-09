@@ -176,8 +176,10 @@ export class HofaMeNFT {
 	public async isMintAllow(editionId:number, address:string): Promise<boolean> {
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
 		let AllowedMinters = await edition.allowedMinters(address);
+		let ZeroAddressAllow = await edition.allowedMinters(ethers.constants.AddressZero);
+		let Owner = await edition.owner();
 		return new Promise((resolve, reject) => {
-			if (AllowedMinters > 0) {
+			if (AllowedMinters > 0 || ZeroAddressAllow > 0 || (Owner === address)) {
 				resolve(true);
 			} else {
 				resolve(false);
