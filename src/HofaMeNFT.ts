@@ -13,6 +13,7 @@ export interface MeNFTInfo {
 	symbol:string,
 	description:string,
 	contentUrl:string,
+	contentHash: string,
 	thumbnailUrl?:string,
 	size:number,
 	royalties:number,
@@ -40,14 +41,14 @@ export class HofaMeNFT {
 	 * Creates a new MeNFT
 	 */ 
 	public async create(info:MeNFTInfo): Promise<MintableEditions> {
-		const contentHash = await this._generateCHash(info.contentUrl); // TO DO: to be computed
+		const contentHashCalculate = await this._generateCHash(info.contentUrl); // TO DO: to be computed
 		if (!info.thumbnailUrl) {
 			info.thumbnailUrl = "";
 		}
 		if (!info.shares) {
 			info.shares = [{holder: "", bps: 0}];
 		}
-		const tx = await (await this.factory.create(info.name, info.symbol, info.description, info.contentUrl, contentHash, info.thumbnailUrl, info.size, info.royalties, info.shares)).wait();
+		const tx = await (await this.factory.create(info.name, info.symbol, info.description, info.contentUrl, info.contentHash, info.thumbnailUrl, info.size, info.royalties, info.shares)).wait();
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
 				if (log.event === "CreatedEditions") {
@@ -128,7 +129,7 @@ export class HofaMeNFT {
 	// multiple mint for one address a MeNFT by it's id
 	// @param editionsId
 	// @param count
-	public async mintMultiple(editionId:number,receiver: string, count:number):Promise<string>{
+	public async mintMultiple(editionId:number, receiver: string, count:number):Promise<string>{
 		const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
 		let address = receiver;
 		let addresses: Array<string> = [];
@@ -137,15 +138,6 @@ export class HofaMeNFT {
 		}
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
 		return new Promise((resolve, reject) => {
-			/*
-			for (const log of tx.events!) {
-				console.log(log.event);
-				if (log.event === "Transfer") {
-					console.log("Enter mintMultiple event");
-					resolve(log.transactionHash);
-				}
-			}
-			*/
 			if (tx.events) {
 				if (tx.events.length > 1) {
 					const log = tx.events[tx.events.length-1];
@@ -174,7 +166,6 @@ export class HofaMeNFT {
 		}
 		const tx = await( await edition.mintAndTransfer(addresses)).wait()
 		return new Promise((resolve, reject) => {
-			let count = 0;
 			if (tx.events) {
 				const log = tx.events![tx.events.length-1];
 				resolve(log.transactionHash);

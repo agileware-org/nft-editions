@@ -32,16 +32,14 @@ describe.only('On HofaMeNFT', () => {
 				symbol: "LELE",
 				description: "My very first MeNFT",
 				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+				contentHash: "0x0000000000000000000000000000000";
 				size: 1000,
 				royalties: 250,
 				shares: [{ holder:curator.address, bps:100 }],
 			}
 			// when
 			const editions = await hofa.create(info);
-			// await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
 			await editions.setPrice(1);
-			console.log(minter.address);
-			// console.log(editions);
 			editions.connect(artist);
 			// then
 			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
@@ -70,7 +68,7 @@ describe.only('On HofaMeNFT', () => {
 		});
 		it("Artist can mint for others", async function () {
 			const editions = await hofa.get(0);
-			await editions.setApprovedMinters([{minter: receiver.address, amount: 50}, {minter: minter.address, amount: 50}]);
+
 			editions.connect(artist);
 			let recipients = new Array<string>(10);
 			for (let i = 0; i < recipients.length; i++) {
@@ -81,18 +79,21 @@ describe.only('On HofaMeNFT', () => {
 				// .withArgs(ethers.constants.AddressZero, receiver.address, 1);
 
 			const receiverBalance = await editions.balanceOf(receiver.address);
-			// await expect(await editions.totalSupply()).to.equal(receiverBalance);
+			const artistBalance = await editions.balanceOf(artist.address);
+			const TotalBalance = receiverBalance.toNumber() + artistBalance.toNumber();
+			const eSupply = await editions.totalSupply();
+			await expect(await editions.totalSupply()).to.equal(TotalBalance);
 		});
 		it("should purchase a MeNFT", async () => {
 			const editions = await hofa.get(0);
+			// await editions.setApprovedMinters([{minter: receiver.address, amount: 50}, {minter: minter.address, amount: 50}]);
                         editions.connect(purchaser);
 			editions.setPrice(ethers.utils.parseEther("1.0"));
 			await expect(await hofa.purchase(0, "1.0"))
 				.to.emit(editions, "Transfer")
 				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
 
-			const purchaserBalance = await editions.balanceOf(purchaser.address);
-			// await expect(await editions.totalSupply()).to.equal(purchaserBalance);
+			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
 		})
 	})
 });
