@@ -19,7 +19,9 @@
     "test-hardhat": "hardhat test --network hardhat --deploy-fixture",
     "build": "yarn run prepack",
     "prepack": "hardhat compile",
-    "verify": "hardhat run scripts/verify.ts"
+    "verify": "hardhat run scripts/verify.ts",
+    "clean": "rm -rf dist",
+    "chain": "hardhat node"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -41,6 +43,7 @@
     "hardhat": "^2.7.0",
     "hardhat-deploy": "^0.8.11",
     "hardhat-gas-reporter": "^1.0.4",
+    "mocha": "^9.1.3",
     "solidity-coverage": "^0.7.17",
     "ts-node": "^10.1.0",
     "typechain": "^5.1.2",

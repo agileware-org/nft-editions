@@ -1,7 +1,6 @@
 ﻿.deps
 contracts/artifacts
+node_modules
+cache
 artifacts
 typechain
-node_modules
-.env
-cache
