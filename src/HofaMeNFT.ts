@@ -209,7 +209,7 @@ export class HofaMeNFT {
 	// verify if signer can mint a MeNFT
 	// @param editionID
 	// @param signer
-	public async isMintAllowed(editionId:number, address:string): Promise<boolean> {
+	public async isAllowedMinter(editionId:number, address:string): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
@@ -225,7 +225,7 @@ export class HofaMeNFT {
 
 	// Generates the sha256 hash from a buffer/string and returns the hash hex-encoded
 	// @param buffer
-	public async sha256FromBuf(buffer:Buffer): Promise<string> {
+	public async hash(buffer:Buffer): Promise<string> {
 		let bitArray = buffer.toString('hex');
 		let hashHex = crypto.createHash("sha256").update(bitArray).digest('hex');
 		return "0x".concat(hashHex.toString());
