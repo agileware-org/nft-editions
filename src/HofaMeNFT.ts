@@ -13,19 +13,27 @@ import { readFileSync, writeFileSync } from 'fs';
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
 	MintableEditions, MintableEditions__factory } from '../typechain';
+import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 
 export interface MeNFTInfo {
-	name:string,
-	symbol:string,
-	description:string,
-	contentUrl:string,
-	contentHash: string,
-	thumbnailUrl?:string,
-	size:number,
-	royalties:number,
+	info: {
+		name:string,
+		symbol:string,
+		description:string,
+		contentUrl:string,
+		contentHash: string,
+		thumbnailUrl:string
+	}
+	size?:number,
+	price?:BigNumberish,
+	royalties?:number,
 	shares?: { 
 		holder: string; 
 		bps: number 
+	}[],
+	allowances?: { 
+		minter: string; 
+		amount: number 
 	}[]
 }
 export class HofaMeNFT {
@@ -47,13 +55,7 @@ export class HofaMeNFT {
 	// Creates a new MeNFT
 	// @param info
 	public async create(info:MeNFTInfo): Promise<MintableEditions> {
-		if (!info.thumbnailUrl) {
-			info.thumbnailUrl = "";
-		}
-		if (!info.shares) {
-			info.shares = [{holder: "", bps: 0}];
-		}
-		const tx = await (await this.factory.create(info.name, info.symbol, info.description, info.contentUrl, info.contentHash, info.thumbnailUrl, info.size, info.royalties, info.shares)).wait();
+		const tx = await (await this.factory.create(info.info, info.size||0, info.price||0, info.royalties||0, info.shares||[], info.allowances||[])).wait();
 		return new Promise((resolve, reject) => {
 			for (const log of tx.events!) {
 				if (log.event === "CreatedEditions") {

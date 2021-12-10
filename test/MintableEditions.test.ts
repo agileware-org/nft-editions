@@ -25,25 +25,28 @@ describe("MintableEditions", function () {
     const { MintableEditionsFactory } = await deployments.fixture(["Editions"]);
     factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
     const receipt = await (await factory.connect(artist).create(
-      "Roberto Lo Giacco",
-      "RLG",
-      "**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)",
-      "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
-      "0x04db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
-      "",
+      {
+        name: "Roberto Lo Giacco", 
+        symbol: "RLG",
+        description: "**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)",
+        contentUrl: "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
+        contentHash: "0x04db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
+        thumbnailUrl: ""
+      },
       2500,
+      0,
       150,
-      [{holder: (await curator.getAddress()) as string, bps: 1000}, {holder: (await shareholder.getAddress()) as string, bps: 500}]
+      [{holder: (await curator.getAddress()) as string, bps: 1000}, {holder: (await shareholder.getAddress()) as string, bps: 500}],
+      [{minter: minter.address, amount: 50}]
     )).wait();
     for (const event of receipt.events!) {
       if (event.event === "CreatedEditions") {
         editions = (await ethers.getContractAt("MintableEditions", event.args![4])) as MintableEditions;
-        await editions.setApprovedMinters([{minter: minter.address, amount: 50}]);
       }
     }
   });
 
-  it("Artist shares are calculated corrrectly", async function () {
+  it("Artist shares are calculated correctly", async function () {
     expect(await editions.shares(await artist.getAddress())).to.be.equal(8500);
   });
 
@@ -422,14 +425,18 @@ describe("MintableEditions", function () {
   
   it("ERC-721: token URI (static content)", async function () { 
     const receipt = await (await factory.connect(artist).create(
-      "Roberto",
-      "RLG",
-      "**Me**, _myself_ and I.",
-      "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
-      "0x05db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
-      "",
+      {
+        name: "Roberto",
+        symbol: "RLG",
+        description: "**Me**, _myself_ and I.",
+        contentUrl: "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
+        contentHash: "0x05db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
+        thumbnailUrl: ""
+      },
       500,
+      0,
       150,
+      [],
       [])).wait();
     let contract:MintableEditions;
     for (const event of receipt.events!) {
@@ -445,14 +452,18 @@ describe("MintableEditions", function () {
   
   it("ERC-721: token URI (animated content)", async function () { 
     const receipt = await (await factory.connect(artist).create(
-      "Roberto",
-      "RLG",
-      "**Me**, _myself_ and I.",
-      "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
-      "0x05db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
-      "https://i.imgur.com/FjT55Ou.jpg",
+      {
+        name: "Roberto", 
+        symbol: "RLG",
+        description: "**Me**, _myself_ and I.",
+        contentUrl: "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
+        contentHash: "0x05db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
+        thumbnailUrl: "https://i.imgur.com/FjT55Ou.jpg"
+      },
       500,
+      0,
       150,
+      [],
       [])).wait();
     let contract:MintableEditions;
     for (const event of receipt.events!) {

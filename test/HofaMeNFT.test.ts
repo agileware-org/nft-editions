@@ -29,11 +29,14 @@ describe('On HofaMeNFT', () => {
 		it("should create a MeNFT", async function() {
 			// given
 			const info:MeNFTInfo = {
-				name: "Emanuele",
-				symbol: "LELE",
-				description: "My very first MeNFT",
-				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-				contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
+				info: {
+					name: "Emanuele",
+					symbol: "LELE",
+					description: "My very first MeNFT",
+					contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+					contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
+					thumbnailUrl: ""
+				},
 				size: 1000,
 				royalties: 250,
 				shares: [{ holder:curator.address, bps:100 }],
@@ -45,6 +48,30 @@ describe('On HofaMeNFT', () => {
 			// then
 			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
 			expect(await editions.connect(artist).contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
+		})
+
+		it("should set default values for price, shares and royalties on the MeNFT", async function() {
+			// given
+			const info:MeNFTInfo = {
+				info: {
+					name: "Emanuele",
+					symbol: "LELE",
+					description: "My very first MeNFT",
+					contentUrl:"ipfs://bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+					contentHash: "0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
+					thumbnailUrl: ""
+				}
+			}
+			// when
+			const editions = await hofa.create(info);
+			// then
+			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
+			expect(await editions.connect(artist).contentHash()).to.be.equal("0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
+			expect(await editions.connect(artist).thumbnailUrl()).to.be.equal("");
+			expect(await editions.connect(artist).royalties()).to.be.equal(0);
+			expect(await editions.connect(artist).price()).to.be.equal(0);
+			expect(await editions.connect(artist).size()).to.be.equal(0);
+			expect(await editions.connect(artist).shares(artist.address)).to.be.equal(10000);
 		})
 		it("should set and retrive price of a MeNFT", async () => {
 			const editions = await hofa.get(0);

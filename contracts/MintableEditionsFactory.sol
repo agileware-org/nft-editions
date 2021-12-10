@@ -39,33 +39,27 @@ contract MintableEditionsFactory {
      * Important: None of these fields can be changed after calling this operation, with the sole exception of the contentUrl field which
      * must refer to a content having the same hash.
      * 
-     * @param _name name of editions, used in the title as "$name $tokenId/$size"
-     * @param _symbol symbol of the tokens minted by this contract
-     * @param _description description of token editions
-     * @param _contentUrl content URL of the token editions
-     * @param _contentHash SHA256 of the token editions content in bytes32 format (0xHASH)
-     * @param _thumbnailUrl optional token editions content thumbnail URL, for animated content only
+     * @param _info name of editions, used in the title as "$name $tokenId/$size"
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
+     * @param _price price for sale in wei
      * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
+     * @param _allowances FIXME
      * @return the address of the editions contract created
      */
     function create(
-        string memory _name,
-        string memory _symbol,
-        string memory _description,
-        string memory _contentUrl,
-        bytes32 _contentHash,
-        string memory _thumbnailUrl,
+        MintableEditions.Info memory _info,
         uint64 _size,
+        uint256 _price,
         uint16 _royalties,
-        MintableEditions.Shares[] memory _shares
+        MintableEditions.Shares[] memory _shares,
+        MintableEditions.Allowance[] memory _allowances
     ) external returns (address) {
-        require(!contents[_contentHash], "Duplicated content");
-        contents[_contentHash] = true;
+        require(!contents[_info.contentHash], "Duplicated content");
+        contents[_info.contentHash] = true;
         uint256 id = counter.current();
         address instance = ClonesUpgradeable.cloneDeterministic(implementation, bytes32(abi.encodePacked(id)));
-        MintableEditions(instance).initialize(msg.sender, _name, _symbol, _description, _contentUrl, _contentHash, _thumbnailUrl, _size, _royalties, _shares);
+        MintableEditions(instance).initialize(msg.sender, _info, _size, _price, _royalties, _shares, _allowances);
         emit CreatedEditions(id, msg.sender, _shares, _size, instance);
         counter.increment();
         return instance;
