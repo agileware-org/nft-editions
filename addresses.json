@@ -1,10 +1,10 @@
 {
   "4": {
-    "EditionsMetadataHelper": "0x4c1F79D0F98846AE45E18FD6993fd7e457fa4D6c",
-    "MintableEditions": "0xdACA8670fA682905C75F44084d2ff7AE9C7b6dC2",
-    "MintableEditionsFactory": "0xD2A087906aeed1b0664Ed59AcFc002B8d3e1351E",
-    "PushSplitter": "0xD6b13ea585200F0d0137aDE3C60c27e40BF1998c",
-    "ShakeableSplitter": "0x6B83ad1e54708eDd4391AC83978382FA3B2F7669",
-    "SplitterFactory": "0x0942e6b49878AD5448d79227FC383edC8cF0412B"
+    "EditionsMetadataHelper": "0x3e9434606A403D8479539c5DCf53E660f0808168",
+    "MintableEditions": "0x43d82d4bB42Ce3Ef345DcdCF243E6E7De2db4367",
+    "MintableEditionsFactory": "0xafB3d0C6A5248E36Ca36408Be813AE535c2DA7a2",
+    "PushSplitter": "0xe1692322Fedd3E78D8941C7CE0101952417bb103",
+    "ShakeableSplitter": "0x1CB2bA84aC56AEb791F24BFC4Fbc863D01258c84",
+    "SplitterFactory": "0xBf5f528b2cA3bF546627cDa1Af16B9F3D6Fdc91C"
   }
 }
