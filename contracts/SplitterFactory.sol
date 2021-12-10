@@ -6,7 +6,7 @@
  * 
  * Made with 🧡 by www.Kreation.tech
  */
-pragma solidity 0.8.10;
+pragma solidity ^0.8.6;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";

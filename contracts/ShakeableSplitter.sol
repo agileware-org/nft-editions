@@ -6,7 +6,7 @@
  * 
  * Made with 🧡 by www.Kreation.tech
  */
-pragma solidity 0.8.10;
+pragma solidity ^0.8.6;
 
 import {PaymentSplitterUpgradeable} from "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
 
