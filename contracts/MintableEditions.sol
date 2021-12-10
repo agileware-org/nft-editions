@@ -13,7 +13,6 @@ import {IERC2981Upgradeable, IERC165Upgradeable} from "@openzeppelin/contracts-u
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import {MulticallUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 
 import "./EditionsMetadataHelper.sol";
 import "./IMintableEditions.sol";
@@ -23,7 +22,7 @@ import "./IMintableEditions.sol";
  * 
  * Operations allow for selling publicly, partial or total giveaways, direct giveaways and rewardings.
  */
-contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEditions, OwnableUpgradeable, MulticallUpgradeable {
+contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEditions, OwnableUpgradeable {
     
     using CountersUpgradeable for CountersUpgradeable.Counter;
     
