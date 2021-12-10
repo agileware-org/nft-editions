@@ -79,9 +79,9 @@ describe.only('On HofaMeNFT', () => {
 			await expect(await editions.balanceOf(receiver.address)).to.be.equal(10); // tokens are transferred
 			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
 		});
-		it("Anyone can't mint if not authorized - This should be fails", async function () {
+		it("Anyone can't mint if not authorized", async function () {
 			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
-			await expect(await buyer.mint(0)).to.be.revertedWith("ProviderError: Error: VM Exception while processing transaction: reverted with reason string 'Minting not allowed'")
+			await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed")
 		})
 		it("Anyone can mint if authorized", async function () {
 			const editions = await hofa.get(0)
@@ -92,11 +92,11 @@ describe.only('On HofaMeNFT', () => {
 			await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
 			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
 		})
-		it("authorized minter with 0 value for minting - This should be fails", async function () {
+		it("authorized minter with 0 value for minting", async function () {
 			const editions = await hofa.get(0)
 
 			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
-			await expect(await buyer.mint(0)).to.be.equal(await editions.totalSupply());
+			await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed");
 			await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
 			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
 		})
@@ -115,7 +115,7 @@ describe.only('On HofaMeNFT', () => {
 			  .to.be.within(ethers.utils.parseEther("-1.001"), ethers.utils.parseEther("-1.0")); // money has been subtracted from purchaser (includes gas)
 			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
 		})
-		it("Anyone should not be able to purchase a MeNFT if not has enough money - This should be fails", async () => {
+		it("Anyone should not be able to purchase a MeNFT if not has enough money", async () => {
 			const editions = await hofa.get(0);
 			editions.connect(artist).setPrice((await purchaser.getBalance()).add(1)); // enables purchasing
 			
@@ -123,7 +123,7 @@ describe.only('On HofaMeNFT', () => {
 			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 			const balance = await purchaser.getBalance(); // store balance before pourchase
 
-			await expect(await buyer.purchase(0)).to.be.equal(await editions.totalSupply()); // acquire a token in exchange of money
+			await expect(buyer.purchase(0)).to.be.reverted; // acquire a token in exchange of money
 
 		})
 		it("should verify if signer can mint a MeNFT", async () => {
