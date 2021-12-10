@@ -2,6 +2,8 @@ require("chai").use(require('chai-as-promised'));
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
+import { promises as fs } from 'fs'
+
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { HofaMeNFT, MeNFTInfo } from "../src/HofaMeNFT"
@@ -40,93 +42,109 @@ describe('On HofaMeNFT', () => {
 			}
 			// when
 			const editions = await hofa.create(info);
-			await editions.setPrice(1);
-			editions.connect(artist);
+			await editions.connect(artist).setPrice(1);
+
 			// then
-			expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
-			expect(await editions.connect(artist).contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
+			expect(await editions.name()).to.be.equal("Emanuele");
+			expect(await editions.contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
 		})
-		it("should set and retrive price of a MeNFT", async () => {
-			const editions = await hofa.get(0);
-			editions.connect(artist);
-			const test = await hofa.fetchPrice(0);
-			await expect(test).to.equal(1);
-			//console.log(test);
-			/*
-			await expect(await hofa.fetchPrice(0))
-				.to.emit(editions, "")
-				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
 
-			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
-			*/
-		})
-		it("should verify if signer can mint a MeNFT", async () => {
-			const editions = await hofa.get(0);
-			editions.connect(artist);
-			let test = await hofa.isMintAllow(0, signer.address);
-			// console.log(test);
-			await editions.setApprovedMinters([{minter: signer.address, amount: 50}]);
-			test = await hofa.isMintAllow(0, signer.address);
-			// console.log(test);
-			await expect(test).to.equal(true);
-			/*
-			await expect(await hofa.fetchPrice(0))
-				.to.emit(editions, "")
-				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
+		it("anyone can retrive price of a MeNFT", async () => {
+			let anyone = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
 
-			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
-			*/
+			await expect(await anyone.fetchPrice(0)).to.be.equal(1);
 		})
 		it("Artist can mint for self", async function () {
-			const editionsNum = await hofa.instances();
 			const editions = await hofa.get(0);
-			editions.connect(artist);
-			await expect(await hofa.mint(0))
-				.to.emit(editions, "Transfer")
-				.withArgs(ethers.constants.AddressZero, artist.address, 1);
-
-			const artistBalance = await editions.balanceOf(artist.address);
-			await expect(await editions.totalSupply()).to.equal(artistBalance);
+			await expect(await hofa.mint(0)).to.be.equal(await editions.totalSupply()); // returns minted token id
+			await expect(await editions.balanceOf(artist.address)).to.be.equal(1); // token is transferred
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(artist.address); // token ownership has been updated
 		})
-		it("Artist can mint Multi MeNFT", async function () {
-			const editions = await hofa.get(0);
-			editions.connect(artist);
-			await expect(await hofa.mintMultiple(0, artist.address, 3))
-				.to.emit(editions, "Transfer")
-				// .withArgs(ethers.constants.AddressZero, artist.address, 1);
 
-			const receiverBalance = await editions.balanceOf(artist.address);
-			await expect(await editions.totalSupply()).to.equal(receiverBalance);
+		it("Artist can mint multiple MeNFTs", async function () {
+			const editions = await hofa.get(0);
+			await expect(await hofa.mintMultiple(0, curator.address, 3)).to.be.equal(await editions.totalSupply()); // returns last minted token id
+			await expect(await editions.balanceOf(curator.address)).to.be.equal(3); // tokens are transferred
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(curator.address); // token ownership has been updated
 		});
+
 		it("Artist can mint for others", async function () {
 			const editions = await hofa.get(0);
 
-			editions.connect(artist);
 			let recipients = new Array<string>(10);
 			for (let i = 0; i < recipients.length; i++) {
 				recipients[i] = receiver.address;
 			}
-			await expect(await hofa.mintAndTransfer(0, recipients))
-				.to.emit(editions, "Transfer")
-				// .withArgs(ethers.constants.AddressZero, receiver.address, 1);
-
-			const receiverBalance = await editions.balanceOf(receiver.address);
-			const artistBalance = await editions.balanceOf(artist.address);
-			const TotalBalance = receiverBalance.toNumber() + artistBalance.toNumber();
-			const eSupply = await editions.totalSupply();
-			// console.log(await editions.address);
-			await expect(await editions.totalSupply()).to.equal(TotalBalance);
+			await expect(await hofa.mintAndTransfer(0, recipients)).to.be.equal(await editions.totalSupply()); // returns last minted token id
+			await expect(await editions.balanceOf(receiver.address)).to.be.equal(10); // tokens are transferred
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
 		});
-		it("should purchase a MeNFT", async () => {
-			const editions = await hofa.get(0);
-                        editions.connect(purchaser);
-			editions.setPrice(ethers.utils.parseEther("1.0"));
-			await expect(await hofa.purchase(0, "1.0"))
-				.to.emit(editions, "Transfer")
-				// .withArgs(ethers.constants.AddressZero, purchaser.address, 1);
-
-			// console.log(await editions.address);
-			await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("1.0"));
+		it("Anyone can't mint if not authorized", async function () {
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed")
 		})
+		it("Anyone can mint if authorized", async function () {
+			const editions = await hofa.get(0)
+			await editions.setApprovedMinters([{minter: purchaser.address, amount: 1}]);
+
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			await expect(await buyer.mint(0)).to.be.equal(await editions.totalSupply());
+			await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
+		})
+		it("authorized minter with 0 value for minting", async function () {
+			const editions = await hofa.get(0)
+
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed");
+			await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
+		})
+		it("Anyone should be able to purchase a MeNFT", async () => {
+			const editions = await hofa.get(0);
+			editions.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
+			
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			const balance = await purchaser.getBalance(); // store balance before pourchase
+
+			await expect(await buyer.purchase(0))
+				.to.be.equal(await editions.totalSupply()); // acquire a token in exchange of money
+
+			await expect(await editions.provider.getBalance(editions.address)).to.be.equal(ethers.utils.parseEther("1.0")); // money has been transferred
+			await expect((await purchaser.getBalance()).sub(balance))
+			  .to.be.within(ethers.utils.parseEther("-1.001"), ethers.utils.parseEther("-1.0")); // money has been subtracted from purchaser (includes gas)
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
+		})
+		it("Anyone should not be able to purchase a MeNFT if not has enough money", async () => {
+			const editions = await hofa.get(0);
+			editions.connect(artist).setPrice((await purchaser.getBalance()).add(1)); // enables purchasing
+			
+
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			const balance = await purchaser.getBalance(); // store balance before pourchase
+
+			await expect(buyer.purchase(0)).to.be.reverted; // acquire a token in exchange of money
+
+		})
+		it("should verify if signer can mint a MeNFT", async () => {
+			const editions = await hofa.get(0);
+
+			await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.false;
+			await editions.setApprovedMinters([{minter: signer.address, amount: 50}]); // amount greater than zero allows address
+			await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.true;
+
+			await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.false;
+			await editions.setApprovedMinters([{minter: ethers.constants.AddressZero, amount: 1}]); // address zero allows anyone
+			await expect(await hofa.isAllowedMinter(0, purchaser.address)).to.be.true;
+			await expect(await hofa.isAllowedMinter(0, receiver.address)).to.be.true;
+			await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.true;
+			await expect(await hofa.isAllowedMinter(0, shareholder.address)).to.be.true;
+		})
+
+		it('it properly hashes from buffer', async () => {
+			const buf = await fs.readFile('./test.mp4');
+			expect(await hofa.hash(buf)).to.equal('0x8794e371f6e14027a4cd5434f2cf93cab35524d26f77a1abea3325821c6dfeff');
+		})
+		
 	})
 });
