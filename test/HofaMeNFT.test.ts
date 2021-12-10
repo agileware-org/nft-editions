@@ -99,14 +99,18 @@ describe.only('On HofaMeNFT', () => {
 
 		it("Anyone should be able to purchase a MeNFT", async () => {
 			const editions = await hofa.get(0);
-			editions.connect(purchaser);
-			editions.setPrice(ethers.utils.parseEther("1.0"));
+			editions.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
 			
-			let buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
-			await expect(await buyer.purchase(0)).to.be.equal(15);
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			const balance = await purchaser.getBalance(); // store balance before pourchase
+
+			await expect(await buyer.purchase(0))
+				.to.be.equal(await editions.totalSupply()); // acquire a token in exchange of money
 
 			await expect(await editions.provider.getBalance(editions.address)).to.be.equal(ethers.utils.parseEther("1.0")); // money has been transferred
-			await expect(await editions.ownerOf(15)).to.be.equal(purchaser.address); // token has been transferred
+			await expect((await purchaser.getBalance()).sub(balance))
+			  .to.be.within(ethers.utils.parseEther("-1.001"), ethers.utils.parseEther("-1.0")); // money has been subtracted from purchaser (includes gas)
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
 		})
 
 		it('it properly hashes from buffer', async () => {
