@@ -6,7 +6,7 @@ import { promises as fs } from 'fs'
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { EdNFT } from "../src/EdNFT"
-import { MintableEditions } from "../typechain"
+import { MintableEditions } from "../src/types"
 
 describe('On EdNFT', () => {
 	let hofa: EdNFT;
