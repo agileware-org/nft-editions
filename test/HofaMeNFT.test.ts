@@ -28,24 +28,28 @@ describe('On HofaMeNFT', () => {
 	it("Artists can create an EdNFT", async function() {
 		// given
 		const info:MeNFTInfo = {
-			name: "Emanuele",
-			symbol: "LELE",
-			description: "My very first MeNFT",
-			contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-			contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
+			info: {
+				name: "Emanuele",
+				symbol: "LELE",
+				description: "My very first MeNFT",
+				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+				contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
+				thumbnailUrl: ""
+			},
 			size: 1000,
+			price: ethers.utils.parseEthers("1.0"),
 			royalties: 250,
 			shares: [{ holder:curator.address, bps:100 }],
+			allowances: []
 		}
 		// when
 		const editions = await hofa.create(info);
-		await editions.connect(artist).setPrice(1);
 
 		// then
 		expect(await editions.name()).to.be.equal("Emanuele");
 		expect(await editions.contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
 	})
-	it("should set default values for price, shares and royalties on the MeNFT", async function() {
+	it("Artist can leave unpopulated default values for price, shares, royalties and allowances on the EdNFT", async function() {
 		// given
 		const info:MeNFTInfo = {
 			info: {
