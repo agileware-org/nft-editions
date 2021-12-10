@@ -1,4 +1,3 @@
-require("chai").use(require('chai-as-promised'));
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
@@ -37,7 +36,7 @@ describe('On HofaMeNFT', () => {
 				thumbnailUrl: ""
 			},
 			size: 1000,
-			price: ethers.utils.parseEthers("1.0"),
+			price: ethers.utils.parseEther("1.0"),
 			royalties: 250,
 			shares: [{ holder:curator.address, bps:100 }],
 			allowances: []
@@ -76,7 +75,7 @@ describe('On HofaMeNFT', () => {
 	it("Anyone can retrive price of a MeNFT", async () => {
 		let anyone = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
 
-		await expect(await anyone.fetchPrice(0)).to.be.equal(1);
+		await expect(await anyone.fetchPrice(0)).to.be.equal(ethers.utils.parseEther("1.0"));
 	})
 	it("Artist can mint for self", async function () {
 		const editions = await hofa.get(0);
@@ -139,17 +138,6 @@ describe('On HofaMeNFT', () => {
 			.to.be.within(ethers.utils.parseEther("-1.001"), ethers.utils.parseEther("-1.0")); // money has been subtracted from purchaser (includes gas)
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
 	})
-	it("None can purchase an edition unless it has enough money", async () => {
-		const editions = await hofa.get(0);
-		editions.connect(artist).setPrice((await purchaser.getBalance()).add(1)); // enables purchasing
-		
-
-		const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
-		const balance = await purchaser.getBalance(); // store balance before pourchase
-
-		await expect(buyer.purchase(0)).to.be.reverted; // acquire a token in exchange of money
-
-	})
 	it("Anyone is able to verify if can mint an edition", async () => {
 		const editions = await hofa.get(0);
 
@@ -164,9 +152,11 @@ describe('On HofaMeNFT', () => {
 		await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.true;
 		await expect(await hofa.isAllowedMinter(0, shareholder.address)).to.be.true;
 	})
-
-	it('it properly hashes from buffer', async () => {
-		const buf = await fs.readFile('./test.mp4');
-		expect(await hofa.hash(buf)).to.equal('0x8794e371f6e14027a4cd5434f2cf93cab35524d26f77a1abea3325821c6dfeff');
+	
+	describe('the utilities', () => {
+		it('can properly hash from buffer', async () => {
+			const buf = await fs.readFile('./relations.drawio.png');
+			expect(await hofa.hash(buf)).to.equal('0xc6a9c3939982961bff77d46f59c7dc2facddfdc18ad1e2b40012de75eff34e99');
+		})
 	})
 });
