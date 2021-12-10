@@ -85,7 +85,15 @@ describe.only('On HofaMeNFT', () => {
 		})
 		it("Anyone can mint if authorized", async function () {
 			const editions = await hofa.get(0)
-			await editions.setApprovedMinters([{minter: purchaser.address, amount: 50}]);
+			await editions.setApprovedMinters([{minter: purchaser.address, amount: 1}]);
+
+			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+			await expect(await buyer.mint(0)).to.be.equal(await editions.totalSupply());
+			await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
+			await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
+		})
+		it("authorized minter with 0 value for minting - This should be fails", async function () {
+			const editions = await hofa.get(0)
 
 			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 			await expect(await buyer.mint(0)).to.be.equal(await editions.totalSupply());
@@ -109,7 +117,8 @@ describe.only('On HofaMeNFT', () => {
 		})
 		it("Anyone should not be able to purchase a MeNFT if not has enough money - This should be fails", async () => {
 			const editions = await hofa.get(0);
-			editions.connect(artist).setPrice(ethers.utils.parseEther("100000000000000000000.0")); // enables purchasing
+			editions.connect(artist).setPrice((await purchaser.getBalance()).add(1)); // enables purchasing
+			
 
 			const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 			const balance = await purchaser.getBalance(); // store balance before pourchase
