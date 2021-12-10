@@ -5,11 +5,11 @@ import { promises as fs } from 'fs'
 
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { HofaMeNFT, MeNFTInfo } from "../src/HofaMeNFT"
+import { EdNFT } from "../src/EdNFT"
 import { MintableEditions } from "../typechain"
 
-describe('On HofaMeNFT', () => {
-	let hofa: HofaMeNFT;
+describe('On EdNFT', () => {
+	let hofa: EdNFT;
 	let artist: SignerWithAddress;
 	let curator: SignerWithAddress;
 	let shareholder: SignerWithAddress;
@@ -20,20 +20,19 @@ describe('On HofaMeNFT', () => {
 
 	beforeEach(async () => {
 		[artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
-		hofa = new HofaMeNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
+		hofa = new EdNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
 	})
 
 	
 	it("Artists can create an EdNFT", async function() {
 		// given
-		const info:MeNFTInfo = {
+		const info:EdNFT.Definition = {
 			info: {
 				name: "Emanuele",
 				symbol: "LELE",
 				description: "My very first MeNFT",
 				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-				contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
-				thumbnailUrl: ""
+				contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca"
 			},
 			size: 1000,
 			price: ethers.utils.parseEther("1.0"),
@@ -50,14 +49,13 @@ describe('On HofaMeNFT', () => {
 	})
 	it("Artist can leave unpopulated default values for price, shares, royalties and allowances on the EdNFT", async function() {
 		// given
-		const info:MeNFTInfo = {
+		const info:EdNFT.Definition = {
 			info: {
 				name: "Emanuele",
 				symbol: "LELE",
 				description: "My very first MeNFT",
 				contentUrl:"ipfs://bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-				contentHash: "0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
-				thumbnailUrl: ""
+				contentHash: "0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca"
 			}
 		}
 		// when
@@ -73,7 +71,7 @@ describe('On HofaMeNFT', () => {
 	})
 
 	it("Anyone can retrive price of a MeNFT", async () => {
-		let anyone = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
+		let anyone = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
 
 		await expect(await anyone.fetchPrice(0)).to.be.equal(ethers.utils.parseEther("1.0"));
 	})
@@ -103,14 +101,14 @@ describe('On HofaMeNFT', () => {
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
 	});
 	it("None can mint if not authorized", async function () {
-		const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 		await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed")
 	})
 	it("Anyone can mint if authorized", async function () {
 		const editions = await hofa.get(0)
 		await editions.setApprovedMinters([{minter: purchaser.address, amount: 1}]);
 
-		const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 		await expect(await buyer.mint(0)).to.be.equal(await editions.totalSupply());
 		await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
@@ -118,7 +116,7 @@ describe('On HofaMeNFT', () => {
 	it("Authorized minter with 0 allowance cannot mint", async function () {
 		const editions = await hofa.get(0)
 
-		const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 		await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed");
 		await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
@@ -127,7 +125,7 @@ describe('On HofaMeNFT', () => {
 		const editions = await hofa.get(0);
 		editions.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
 		
-		const buyer = new HofaMeNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 		const balance = await purchaser.getBalance(); // store balance before pourchase
 
 		await expect(await buyer.purchase(0))

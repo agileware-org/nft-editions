@@ -16,28 +16,32 @@ import {
 	MintableEditions, MintableEditions__factory } from '../typechain';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 
-export interface MeNFTInfo {
-	info: {
-		name:string,
-		symbol:string,
-		description:string,
-		contentUrl:string,
-		contentHash: string,
-		thumbnailUrl:string
+export declare namespace EdNFT {
+	interface Definition {
+		info: {
+			name:string,
+			symbol:string,
+			description:string,
+			contentUrl:string,
+			contentHash: string,
+			thumbnailUrl?:string
+		}
+		size?:number,
+		price?:BigNumberish,
+		royalties?:number,
+		shares?: { 
+			holder: string; 
+			bps: number 
+		}[],
+		allowances?: { 
+			minter: string; 
+			amount: number 
+		}[]
 	}
-	size?:number,
-	price?:BigNumberish,
-	royalties?:number,
-	shares?: { 
-		holder: string; 
-		bps: number 
-	}[],
-	allowances?: { 
-		minter: string; 
-		amount: number 
-	}[]
 }
-export class HofaMeNFT {
+
+export class EdNFT {
+
 	private signerOrProvider: Signer | Provider;
 	private factory!: MintableEditionsFactory;
 
@@ -69,13 +73,18 @@ export class HofaMeNFT {
 	// Write functions
 	// Creates a new MeNFT
 	// @param info
-	public async create(info:MeNFTInfo, confirmations:number = 1): Promise<MintableEditions> {
+	public async create(props:EdNFT.Definition, confirmations:number = 1): Promise<MintableEditions> {
 		return new Promise( (resolve, reject) => { (async() => {
-			if (!info.info.thumbnailUrl) info.info.thumbnailUrl = "";
-			if (!info.shares) info.shares = [];
 			try {
 				const tx = await (await this.factory
-					.create(info.info, info.size||0, info.price||0, info.royalties||0, info.shares||[], info.allowances||[]))
+					.create({
+						name: props.info.name,
+						symbol: props.info.symbol,
+						description: props.info.description,
+						contentUrl: props.info.contentUrl,
+						contentHash: props.info.contentHash,
+						thumbnailUrl: props.info.thumbnailUrl || ""
+					}, props.size||0, props.price||0, props.royalties||0, props.shares||[], props.allowances||[]))
 					.wait(confirmations);
 				for (const log of tx.events!) {
 					if (log.event === "CreatedEditions") {
