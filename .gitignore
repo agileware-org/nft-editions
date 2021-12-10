@@ -6,3 +6,4 @@ artifacts
 typechain
 dist
 src/types
+deployments/*/solcInputs
