@@ -20,12 +20,14 @@ Each `EdNFT` produced has the following characteristics:
 * `thumbnailUrl` (OPTIONAL) is used to associate a static off-chain content when the main content is an animation (the EdNFT owner can update, direct references to IPFS content are possible)
 * `contentHash` (IMMUTABLE) sha256 of the associated off-chain content, ensures content uniqueness within the chain
 * `size` (IMMUTABLE) determines how many editions of this EdNFT can be minted: if set to 0 then `uint64.max()` editions can be minted (about _18.5 **quintillions**_)
+* `price` determines how much has to be transferred to the contract in order to purchase an edition: if set to 0 then editions cannot be purchased
 * `royalties` (IMMUTABLE) perpetual royalties to be paid to the EdNFT owner upon any reselling, in [basis-points](https://www.investopedia.com/terms/b/basispoint.asp) format (eq. `250` corresponding to **2.5%**)
 * `shares` (IMMUTABLE) pairs of (shareholder, percentage) describing how the value collected by the sales of this contract will be splitted between the shareholders and the owner (percentages expressed in [basis-points](https://www.investopedia.com/terms/b/basispoint.asp))
+* `allowances` pairs of (address, amount) describing who is entitle to mint and for how many editions: giving a non-zero allowance to the _ZeroAddress_ permits to anyone minting as many editions as available
 
-Almost all the properties are immutable, with the exclusion of the `contentUrl` and `thumbnailUrl`, allowing the EdNFT owner to move the off-chain content, if necessary.
+Almost all the properties are immutable, with the exclusion of the `contentUrl`, `thumbnailUrl` (allowing the EdNFT owner to move the off-chain content, if necessary), `price` (enbling or disabling sales) and `allowances` (providing others other than the artist to mint editions).
 
-The EdNFT guarantees minting is automatically disabled when the last available edition is produced: a EdNFT can never generate more NFTs than `size`, or `18,446,744,073,709,551,614` if the MNFT was created unbound (`size = 0`).
+The EdNFT guarantees minting is automatically disabled when the last available edition is produced: an EdNFT can never generate more NFTs than `size`, or `18,446,744,073,709,551,614` if the MNFT was created as unbound (`size = 0`).
 
 # Capabilities
 
