@@ -40,6 +40,21 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         uint16 amount;
     }
 
+    struct Info {
+        // name of editions, used in the title as "$name $tokenId/$size"
+        string name;
+        // symbol of the tokens minted by this contract
+        string symbol;
+        // description of token editions
+        string description;
+        // content URL of the token editions
+        string contentUrl;
+        // SHA256 of the token editions content in bytes32 format (0xHASH)
+        bytes32 contentHash;
+        // optional token editions content thumbnail URL, for animated content only
+        string thumbnailUrl;
+    }
+
     // token id counter
     CountersUpgradeable.Counter private counter;
 
@@ -84,38 +99,33 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Creates a new edition and sets the only allowed minter to the address that creates/owns the edition: this can be re-assigned or updated later.
      * 
      * @param _owner can authorize, mint, gets royalties and a dividend of sales, can update the content URL.
-     * @param _name name of editions, used in the title as "$name $tokenId/$size"
-     * @param _symbol symbol of the tokens minted by this contract
-     * @param _description description of token editions
-     * @param _contentUrl content URL of the token editions
-     * @param _contentHash SHA256 of the token editions content in bytes32 format (0xHASH)
-     * @param _thumbnailUrl optional token editions content thumbnail URL, for animated content only
+     * @param _info token properties
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
+     * @param _price sale price in wei
      * @param _royalties perpetual royalties paid to the creator upon token selling
      * @param _shares shares in bps destined to the shareholders (one per each shareholder)
      */
     function initialize(
         address _owner,
-        string memory _name,
-        string memory _symbol,
-        string memory _description,
-        string memory _contentUrl,
-        bytes32 _contentHash,
-        string memory _thumbnailUrl,
+        Info memory _info,
         uint64 _size,
+        uint256 _price,
         uint16 _royalties,
-        Shares[] memory _shares
+        Shares[] memory _shares,
+        Allowance[] memory _allowances
     ) public initializer {
-        __ERC721_init(_name, _symbol);
+        __ERC721_init(_info.name, _info.symbol);
         __Ownable_init();
 
         transferOwnership(_owner); // set ownership
-        description = _description;
-        require(bytes(_contentUrl).length > 0, "Empty content URL");
-        contentUrl = _contentUrl;
-        contentHash = _contentHash;
-        thumbnailUrl = _thumbnailUrl;
+        description = _info.description;
+        require(bytes(_info.contentUrl).length > 0, "Empty content URL");
+        contentUrl = _info.contentUrl;
+        contentHash = _info.contentHash;
+        thumbnailUrl = _info.thumbnailUrl;
         size = _size;
+        price = _price;
+        _setAllowances(_allowances);
         counter.increment(); // token ids start at 1
 
         require(_royalties < 10_000, "Royalties too high");
@@ -262,6 +272,10 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @param allowances tuples of (address, uint16) describing how many tokens an address is allowed to mint, 0 disables minting
      */
     function setApprovedMinters(Allowance[] memory allowances) public onlyOwner {
+        _setAllowances(allowances);
+    }
+
+    function _setAllowances(Allowance[] memory allowances) internal {
         for (uint i = 0; i < allowances.length; i++) {
             allowedMinters[allowances[i].minter] = allowances[i].amount;
         }
