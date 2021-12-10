@@ -13,7 +13,7 @@ import { Signer } from '@ethersproject/abstract-signer'
 import { readFileSync, writeFileSync } from 'fs';
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
-	MintableEditions, MintableEditions__factory } from '../typechain';
+	MintableEditions, MintableEditions__factory } from './types';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 
 export declare namespace EdNFT {

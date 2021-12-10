@@ -41,7 +41,7 @@ describe('On EdNFT', () => {
 			allowances: []
 		}
 		// when
-		const editions = await hofa.create(info);
+		const editions = await hofa.create(info, 8);
 
 		// then
 		expect(await editions.name()).to.be.equal("Emanuele");

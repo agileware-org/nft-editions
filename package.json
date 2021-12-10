@@ -2,33 +2,40 @@
   "name": "@agileware/nft-editions",
   "version": "1.0.0",
   "description": "NFT Editions Contracts",
-  "main": "index.js",
   "author": "HOFA",
   "license": "MIT",
   "private": false,
+  "main": "index.js",
+  "types": "index.d.ts",
   "files": [
     "typechain",
     "contracts",
-    "deployments"
+    "deployments",
+    "addresses.json",
+    "src"
   ],
   "scripts": {
     "typechain": "hardhat typechain",
     "compile": "hardhat compile",
+    "postbuild": "npm-prepare-dist",
     "deploy": "hardhat deploy",
     "test": "hardhat test",
     "test-hardhat": "hardhat test --network hardhat --deploy-fixture",
-    "build": "yarn run prepack",
+    "build": "tsc",
     "prepack": "hardhat compile",
     "verify": "hardhat run scripts/verify.ts",
     "clean": "rm -rf dist",
-    "chain": "hardhat node"
+    "chain": "hardhat node",
+    "prepare" : "hardhat compile",
+    "prepublishOnly" : "hardhat test --network hardhat --deploy-fixture && hardhat deploy",
+    "version" : "npm run format && git add -A src",
+    "postversion" : "git push && git push --tags"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.4",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/hardhat-upgrades": "^1.12.0",
-    "@typechain/ethers-v5": "^7.1.0",
     "@typechain/hardhat": "^2.3.0",
     "@types/chai": "^4.2.21",
     "@types/data-urls": "^2.0.1",
@@ -47,11 +54,12 @@
     "solidity-coverage": "^0.7.17",
     "ts-node": "^10.1.0",
     "typechain": "^5.1.2",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "@openzeppelin/contracts": "^4.4.0",
+    "@openzeppelin/contracts-upgradeable": "^4.4.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.4.0",
-    "@openzeppelin/contracts-upgradeable": "^4.4.0",
-    "base64-sol": "^1.0.1"
+    "base64-sol": "^1.0.1",
+    "@typechain/ethers-v5": "^7.1.0"
   }
 }

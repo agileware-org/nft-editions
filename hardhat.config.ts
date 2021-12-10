@@ -33,7 +33,7 @@ const config: HardhatUserConfig = {
           runs: 200000,
           enabled: true
         }
-      } 
+      }
     }],
   },
   networks: {
@@ -60,6 +60,9 @@ const config: HardhatUserConfig = {
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     maxMethodDiff: 10,
   },
+  typechain: {
+    outDir: 'src/types'
+  }
 };
 
 export default config;
