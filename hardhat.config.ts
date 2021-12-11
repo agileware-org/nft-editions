@@ -9,6 +9,7 @@ import "@nomiclabs/hardhat-etherscan";
 import '@openzeppelin/hardhat-upgrades';
 import "solidity-coverage";
 import "hardhat-deploy";
+import "hardhat-packager";
 import 'hardhat-gas-reporter';
 
 const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
@@ -63,6 +64,10 @@ const config: HardhatUserConfig = {
   },
   typechain: {
     outDir: 'src/types'
+  },
+  packager: {
+    contracts: ["MintableEditionsFactory", "MintableEditions", "EditionsMetadataHelper", "ERC721"],
+    includeFactories: true,
   }
 };
 
