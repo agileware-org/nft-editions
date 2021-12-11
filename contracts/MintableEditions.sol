@@ -342,11 +342,11 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         return metadata.createTokenURI(name(), description, contentUrl, thumbnailUrl, tokenId, size);
     }
     
-     /**
-      * ERC2981 - Gets royalty information for token
-      *
-      * @param _value the sale price for this token
-      */
+    /**
+     * ERC2981 - Gets royalty information for token
+     *
+     * @param _value the sale price for this token
+     */
     function royaltyInfo(uint256, uint256 _value) external view override returns (address receiver, uint256 royaltyAmount) {
         if (owner() == address(0x0)) {
             return (owner(), 0);
