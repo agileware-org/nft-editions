@@ -15,6 +15,7 @@ import {
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
 	MintableEditions, MintableEditions__factory } from './types';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
+import addresses from './addresses.json';
 
 export declare namespace EdNFT {
 	interface Definition {
@@ -45,22 +46,21 @@ export class EdNFT {
 	private signerOrProvider: Signer | Provider;
 	private factory!: MintableEditionsFactory;
 
-	constructor (signerOrProvider: Signer | Provider, factoryAddress?: string) {
+	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
 		this.signerOrProvider = signerOrProvider;
-		if (factoryAddress) {
+		if (typeof(factoryAddressOrChainId) !== 'string') {
 			//load Factory contract
-			this.factory = MintableEditionsFactory__factory.connect(factoryAddress as string, signerOrProvider);
+			const contracts:{[key: string]: string} = (addresses as {[key: string]: {[name: string]: string}})[factoryAddressOrChainId.toString()];
+			if (!contracts) throw new Error("Unknown chain with id " + factoryAddressOrChainId)
+			this.factory = MintableEditionsFactory__factory.connect(contracts["MintableEditionsFactory"], signerOrProvider);
 		} else {
-			const addresses = JSON.parse(readFileSync('./addresses.json', 'utf-8'));
-			this._chainId(signerOrProvider).then(chainId =>
-				this.factory = MintableEditionsFactory__factory.connect(addresses[chainId].MintableEditionsFactory, signerOrProvider)
-			);
+			this.factory = MintableEditionsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
 		}
 	}
 
-	private async _chainId(signerOrProvider: Signer | Provider): Promise<number> {
+	public static async getChainId(signerOrProvider: Signer | Provider): Promise<number> {
 		return new Promise((resolve, reject) => {
-			const chainId = (signerOrProvider as Signer).getChainId();
+			const chainId = (signerOrProvider as Signer).getChainId()
 			if (chainId === undefined) {
 				(signerOrProvider as Provider).getNetwork().then(network => {
 					resolve(network.chainId);

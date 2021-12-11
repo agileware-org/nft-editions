@@ -8,7 +8,7 @@ import {
   MintableEditionsFactory,
   MintableEditions,
   MintableEditionsFactory__factory,
-} from "../typechain";
+} from "../src/types";
 
 describe("MintableEditionsFactory", function () {
   let artist: SignerWithAddress;

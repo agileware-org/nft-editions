@@ -22,7 +22,6 @@ describe('On EdNFT', () => {
 		[artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
 		hofa = new EdNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
 	})
-
 	
 	it("Artists can create an EdNFT", async function() {
 		// given
@@ -41,7 +40,7 @@ describe('On EdNFT', () => {
 			allowances: []
 		}
 		// when
-		const editions = await hofa.create(info, 8);
+		const editions = await hofa.create(info);
 
 		// then
 		expect(await editions.name()).to.be.equal("Emanuele");

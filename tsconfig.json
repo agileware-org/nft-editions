@@ -21,7 +21,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "typechain", "src/**/*"
+    "src"
   ],
   "exclude": [
     "node_modules", "test", "hardhat.config.ts"

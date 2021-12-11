@@ -6,7 +6,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   MintableEditionsFactory,
   MintableEditions,
-} from "../typechain";
+} from "../src/types";
 
 describe("MintableEditions", function () {
   let artist: SignerWithAddress;
