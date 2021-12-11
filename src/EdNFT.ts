@@ -4,10 +4,6 @@
  *
  * Made with 🧡 by www.Kreation.tech
  */
-
-
-const { ethers } = require("hardhat");
-const crypto = require("crypto");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
 import { 
@@ -15,6 +11,8 @@ import {
 	MintableEditions, MintableEditions__factory } from './types';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 import addresses from './addresses.json';
+import ethers from "ethers";
+import crypto from "crypto";
 
 export declare namespace EdNFT {
 	interface Definition {
@@ -50,7 +48,7 @@ export class EdNFT {
 		if (typeof(factoryAddressOrChainId) !== 'string') {
 			//load Factory contract
 			const contracts:{[key: string]: string} = (addresses as {[key: string]: {[name: string]: string}})[factoryAddressOrChainId.toString()];
-			if (!contracts) throw new Error("Unknown chain with id " + factoryAddressOrChainId)
+			if (!contracts) throw new Error('Unknown chain with id ' + factoryAddressOrChainId)
 			this.factory = MintableEditionsFactory__factory.connect(contracts["MintableEditionsFactory"], signerOrProvider);
 		} else {
 			this.factory = MintableEditionsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
