@@ -10,7 +10,6 @@ const { ethers } = require("hardhat");
 const crypto = require("crypto");
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
-import { readFileSync, writeFileSync } from 'fs';
 import { 
 	MintableEditionsFactory, MintableEditionsFactory__factory, 
 	MintableEditions, MintableEditions__factory } from './types';
@@ -248,9 +247,8 @@ export class EdNFT {
 
 	// Generates the sha256 hash from a buffer/string and returns the hash hex-encoded
 	// @param buffer
-	public async hash(buffer:Buffer): Promise<string> {
-		let bitArray = buffer.toString('hex');
-		let hashHex = crypto.createHash("sha256").update(bitArray).digest('hex');
+	public static hash(buffer:Buffer): string {
+		const hashHex = crypto.createHash("sha256").update(buffer.toString('hex')).digest('hex');
 		return "0x".concat(hashHex.toString());
 	}
 	/////////////////////////////////////////////////////////
