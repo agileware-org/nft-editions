@@ -1,12 +1,10 @@
-const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
-
-import { promises as fs } from 'fs'
-
+import { promises as fs } from 'fs';
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { EdNFT } from "../src/EdNFT"
-import { MintableEditions } from "../src/types"
+
+const { expect } = require("chai");
+const { ethers, deployments } = require("hardhat");
 
 describe('On EdNFT', () => {
 	let hofa: EdNFT;
