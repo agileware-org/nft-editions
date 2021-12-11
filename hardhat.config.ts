@@ -49,10 +49,11 @@ const config: HardhatUserConfig = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`, 
       gasPrice: 50000000000, // 50 Gwei
+      accounts: [process.env.PRIVATE_KEY||""],
     }
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   gasReporter: {
     currency: 'USD',
