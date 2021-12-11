@@ -151,7 +151,7 @@ describe('On EdNFT', () => {
 	describe('the utilities', () => {
 		it('can properly hash from buffer', async () => {
 			const buf = await fs.readFile('./relations.drawio.png');
-			expect(await hofa.hash(buf)).to.equal('0xc6a9c3939982961bff77d46f59c7dc2facddfdc18ad1e2b40012de75eff34e99');
+			expect(await EdNFT.hash(buf)).to.equal('0xd3018a4e91c1b489683026c247042fa47b3e4de4ca2520bf5fe99a52a2983601');
 		})
 	})
 });

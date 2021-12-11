@@ -248,7 +248,7 @@ export class EdNFT {
 	// Generates the sha256 hash from a buffer/string and returns the hash hex-encoded
 	// @param buffer
 	public static hash(buffer:Buffer): string {
-		const hashHex = crypto.createHash("sha256").update(buffer.toString('hex')).digest('hex');
+		const hashHex = crypto.createHash("sha256").update(buffer.toString()).digest('hex');
 		return "0x".concat(hashHex.toString());
 	}
 	/////////////////////////////////////////////////////////
