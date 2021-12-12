@@ -1,6 +1,6 @@
 {
   "name": "@kreation.tech/nft-editions",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "NFT Editions Contracts",
   "author": "HOFA",
   "license": "MIT",
@@ -15,7 +15,6 @@
     "postbuild": "npm-prepare-dist && ts-node scripts/prepare.ts",
     "verify": "hardhat run scripts/verify.ts",
     "clean": "rm -rf dist",
-    "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags"
   },
   "devDependencies": {
