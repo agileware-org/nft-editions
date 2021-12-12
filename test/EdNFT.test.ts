@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { EdNFT } from "../src/EdNFT"
+import { MintableEditions } from '../src/types';
 
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
@@ -15,10 +16,26 @@ describe('On EdNFT', () => {
 	let purchaser: SignerWithAddress;
 	let minter: SignerWithAddress;
 	let signer: SignerWithAddress;
-
-	beforeEach(async () => {
+	let editions:MintableEditions;
+	
+	before(async () => {
 		[artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
 		hofa = new EdNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
+		const info:EdNFT.Definition = {
+			info: {
+				name: "Emanuele",
+				symbol: "LELE",
+				description: "My very first MeNFT",
+				contentUrl:"https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+				contentHash: "0x1f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca"
+			},
+			size: 1000,
+			price: ethers.utils.parseEther("1.0"),
+			royalties: 250,
+			shares: [{ holder:curator.address, bps:100 }],
+			allowances: []
+		}
+		editions = await hofa.create(info);
 	})
 	
 	it("Artists can create an EdNFT", async function() {
@@ -135,7 +152,6 @@ describe('On EdNFT', () => {
 	})
 	it("Anyone is able to verify if can mint an edition", async () => {
 		const editions = await hofa.get(0);
-
 		await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.false;
 		await editions.setApprovedMinters([{minter: signer.address, amount: 50}]); // amount greater than zero allows address
 		await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.true;
@@ -151,7 +167,7 @@ describe('On EdNFT', () => {
 	describe('the utilities', () => {
 		it('can properly hash from buffer', async () => {
 			const buf = await fs.readFile('./relations.drawio.png');
-			expect(await EdNFT.hash(buf)).to.equal('0xd3018a4e91c1b489683026c247042fa47b3e4de4ca2520bf5fe99a52a2983601');
+			expect(await EdNFT.hash(buf)).to.equal('0x41621bfc79d24cf9365ecf9a0954a6617c011bc19de5aaafa813c1108512ff7d');
 		})
 	})
 });

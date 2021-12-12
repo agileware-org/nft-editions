@@ -262,6 +262,18 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         return super.owner();
     }
 
+    function transferOwnership(address newOwner) public override onlyOwner {
+        require(newOwner != address(0), "New owner is the zero address");
+        shares[newOwner] = shares[newOwner] + shares[owner()];
+        shares[owner()] = 0;
+         _transferOwnership(newOwner);
+    }
+
+    function renounceOwnership() public override onlyOwner {
+        require(address(this).balance == 0 && price == 0, "Potential loss of funds");
+        _transferOwnership(address(0));
+    }
+
     /**
      * Allows the edition owner to set the amount of tokens (max 65535) an address is allowed to mint.
      * 

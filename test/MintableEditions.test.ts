@@ -356,6 +356,25 @@ describe("MintableEditions", function () {
     await expect(await editions.provider.getBalance(editions.address)).to.equal(ethers.utils.parseEther("0.0"));
   });
 
+  it("Artist can transfer ownership", async function () {
+    const shares = await editions.shares(artist.address);
+    expect(await editions.owner()).to.be.equal(artist.address);
+    await editions.connect(artist).transferOwnership(buyer.address);
+    expect(await editions.owner()).to.be.equal(buyer.address);
+
+    expect(await editions.royaltyInfo(1, ethers.utils.parseEther("1.0")))
+      .to.be.deep.equal([buyer.address, ethers.utils.parseEther("0.015")])
+    
+    expect(await editions.shares(buyer.address)).to.be.equal(shares);
+    expect(await editions.shares(artist.address)).to.be.equal(0);
+    expect(await editions.shares(shareholder.address)).to.be.equal(500);
+    
+    await editions.connect(buyer).transferOwnership(shareholder.address);
+    expect(await editions.shares(shareholder.address)).to.be.equal(9000);
+    expect(await editions.shares(buyer.address)).to.be.equal(0);
+    
+  });
+
   it("ERC-721: totalSupply increases upon minting", async function () {
     await expect(await editions.totalSupply()).to.be.equal(0);
     await editions.connect(minter).mint();

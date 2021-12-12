@@ -6,12 +6,10 @@
  */
 import { Provider } from '@ethersproject/providers'
 import { Signer } from '@ethersproject/abstract-signer'
-import { 
-	MintableEditionsFactory, MintableEditionsFactory__factory, 
-	MintableEditions, MintableEditions__factory } from './types';
+import { MintableEditionsFactory__factory, MintableEditions__factory } from './types';
+import type { MintableEditionsFactory, MintableEditions } from './types';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 import addresses from './addresses.json';
-import ethers from "ethers";
 import crypto from "crypto";
 
 export declare namespace EdNFT {
@@ -41,7 +39,7 @@ export declare namespace EdNFT {
 export class EdNFT {
 
 	private signerOrProvider: Signer | Provider;
-	private factory!: MintableEditionsFactory;
+	private factory: MintableEditionsFactory;
 
 	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
 		this.signerOrProvider = signerOrProvider;
@@ -198,7 +196,7 @@ export class EdNFT {
 	// @param id
 	public async get(id: number): Promise<MintableEditions> {
 		return new Promise((resolve) => {
-			this.factory.get(id).then(address => {
+			this.factory.get(id).then((address) => {
 				resolve(MintableEditions__factory.connect(address, this.signerOrProvider));
 			});
 		});
@@ -217,7 +215,7 @@ export class EdNFT {
 	// @param editionID
 	public async fetchPrice(editionId:number): Promise<BigNumber> {
 		return new Promise((resolve) => {
-			this.factory.get(editionId).then(address => {
+			this.factory.get(editionId).then((address) => {
 				const edition = MintableEditions__factory.connect(address, this.signerOrProvider);
 				resolve(edition.price());
 			});
@@ -232,11 +230,10 @@ export class EdNFT {
 	public async isAllowedMinter(editionId:number, address:string): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
-				const allowedMinters = await edition.allowedMinters(address);
-				const zeroAddressAllowed = await edition.allowedMinters(ethers.constants.AddressZero);
-				const owner = await edition.owner();
-				resolve(allowedMinters > 0 || zeroAddressAllowed > 0 || (owner === address));
+				const edition = await this.get(editionId);
+				resolve(await edition.owner() === address || 
+					await edition.allowedMinters(address) > 0 || 
+					await edition.allowedMinters("0x0000000000000000000000000000000000000000") > 0);
 			} catch (err) {
 				reject(err);
 			}
