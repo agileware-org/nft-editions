@@ -10,7 +10,6 @@ import { MintableEditionsFactory__factory, MintableEditions__factory } from './t
 import type { MintableEditionsFactory, MintableEditions } from './types';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 import addresses from './addresses.json';
-import crypto from "crypto";
 
 export declare namespace EdNFT {
 	interface Definition {
@@ -68,7 +67,7 @@ export class EdNFT {
 	// Write functions
 	// Creates a new MeNFT
 	// @param info
-	public async create(props:EdNFT.Definition, confirmations:number = 1): Promise<MintableEditions> {
+	public async create(props:EdNFT.Definition, confirmations:number = 1): Promise<{id:string, address:string, instance:MintableEditions}> {
 		return new Promise( (resolve, reject) => { (async() => {
 			try {
 				const tx = await (await this.factory
@@ -83,7 +82,11 @@ export class EdNFT {
 					.wait(confirmations);
 				for (const log of tx.events!) {
 					if (log.event === "CreatedEditions") {
-						resolve(MintableEditions__factory.connect(log.args![4], this.signerOrProvider));
+						resolve({
+							id: log.args![1] as string, 
+							address: log.args![4] as string, 
+							instance: MintableEditions__factory.connect(log.args![4], this.signerOrProvider)
+						});
 					}
 				}
 			} catch (err) {
@@ -95,10 +98,10 @@ export class EdNFT {
 	// purchase a MeNFT by it's id
 	// @param editionsId
 	// @parma value
-	public async purchase(editionId:number, confirmations:number = 1): Promise<BigNumber> {
+	public async purchase(id:BigNumberish, confirmations:number = 1): Promise<BigNumber> {
 		return new Promise( (resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const price = await edition.price();
 				if (price.gt(0)) {
 					const tx = await (await edition.purchase({value: price})).wait(confirmations);
@@ -118,10 +121,10 @@ export class EdNFT {
 
 	// mint a MeNFT by it's id
 	// @param editionsId
-	public async mint(editionId:number, confirmations:number = 1):Promise<BigNumber>{
+	public async mint(id:BigNumberish, confirmations:number = 1):Promise<BigNumber>{
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const tx = await(await edition.mint()).wait(confirmations);
 				for (const log of tx.events!) {
 					if (log.event === "Transfer") {
@@ -139,10 +142,10 @@ export class EdNFT {
 	// multiple mint for one address a MeNFT by it's id
 	// @param editionsId
 	// @param count
-	public async mintMultiple(editionId:number, receiver: string, count:number, confirmations:number = 1):Promise<BigNumber> {
+	public async mintMultiple(id:BigNumberish, receiver: string, count:number, confirmations:number = 1):Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const addresses: Array<string> = [];
 				for (let i = 0; i < count; i++) {
 					addresses.push(receiver);
@@ -167,7 +170,7 @@ export class EdNFT {
 	// @param editionsId
 	// @param recipients
 	// @param count - default 1
-	public async mintAndTransfer(editionId:number, recipients:Array<string>, count:number = 1, confirmations:number = 1):Promise<BigNumber> {
+	public async mintAndTransfer(id:BigNumberish, recipients:Array<string>, count:number = 1, confirmations:number = 1):Promise<BigNumber> {
 		let addresses: Array<string> = [];
 		for (const addr of recipients!) {
 			for (let i = 0; i < count; i++) {
@@ -176,7 +179,7 @@ export class EdNFT {
 		}
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(editionId), this.signerOrProvider);
+				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const tx = await( await edition.mintAndTransfer(addresses)).wait(confirmations)
 				if (tx.events) {
 					const log = tx.events![tx.events.length-1];
@@ -194,10 +197,13 @@ export class EdNFT {
 	// MintableEditionsFactory functions
 	// Retrieves a MeNFT by it's id
 	// @param id
-	public async get(id: number): Promise<MintableEditions> {
+	public async get(id: BigNumberish): Promise<{address:string, instance:MintableEditions}> {
 		return new Promise((resolve) => {
 			this.factory.get(id).then((address) => {
-				resolve(MintableEditions__factory.connect(address, this.signerOrProvider));
+				resolve({
+					address: address,
+					instance: MintableEditions__factory.connect(address, this.signerOrProvider)
+				});
 			});
 		});
 	}
@@ -211,11 +217,11 @@ export class EdNFT {
 	////////////////////////////////////////////
 
 	// Read functions
-	// Fetch Edition price
+	// Fetch EdNFT price
 	// @param editionID
-	public async fetchPrice(editionId:number): Promise<BigNumber> {
+	public async fetchPrice(id:BigNumberish): Promise<BigNumber> {
 		return new Promise((resolve) => {
-			this.factory.get(editionId).then((address) => {
+			this.factory.get(id).then((address) => {
 				const edition = MintableEditions__factory.connect(address, this.signerOrProvider);
 				resolve(edition.price());
 			});
@@ -224,13 +230,13 @@ export class EdNFT {
 	////////////////////////////////////////////
 
 	// Miscellaneous functions
-	// verify if signer can mint a MeNFT
+	// verify if signer can mint a EdNFT
 	// @param editionID
 	// @param signer
-	public async isAllowedMinter(editionId:number, address:string): Promise<boolean> {
+	public async isAllowedMinter(id:BigNumberish, address:string): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = await this.get(editionId);
+				const edition = (await this.get(id)).instance;
 				resolve(await edition.owner() === address || 
 					await edition.allowedMinters(address) > 0 || 
 					await edition.allowedMinters("0x0000000000000000000000000000000000000000") > 0);
@@ -239,13 +245,5 @@ export class EdNFT {
 			}
 		})()});
 	}
-
-	// Generates the sha256 hash from a buffer/string and returns the hash hex-encoded
-	// @param buffer
-	public static hash(buffer:Buffer): string {
-		const hashHex = crypto.createHash("sha256").update(buffer.toString()).digest('hex');
-		return "0x".concat(hashHex.toString());
-	}
-	/////////////////////////////////////////////////////////
 }
 

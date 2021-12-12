@@ -16,7 +16,7 @@ describe('On EdNFT', () => {
 	let purchaser: SignerWithAddress;
 	let minter: SignerWithAddress;
 	let signer: SignerWithAddress;
-	let editions:MintableEditions;
+	let editions: MintableEditions;
 	
 	before(async () => {
 		[artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
@@ -35,7 +35,7 @@ describe('On EdNFT', () => {
 			shares: [{ holder:curator.address, bps:100 }],
 			allowances: []
 		}
-		editions = await hofa.create(info);
+		editions = (await hofa.create(info)).instance;
 	})
 	
 	it("Artists can create an EdNFT", async function() {
@@ -55,7 +55,7 @@ describe('On EdNFT', () => {
 			allowances: []
 		}
 		// when
-		const editions = await hofa.create(info);
+		const editions = (await hofa.create(info)).instance;
 
 		// then
 		expect(await editions.name()).to.be.equal("Emanuele");
@@ -73,7 +73,7 @@ describe('On EdNFT', () => {
 			}
 		}
 		// when
-		const editions = await hofa.create(info);
+		const editions = (await hofa.create(info)).instance;
 		// then
 		expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
 		expect(await editions.connect(artist).contentHash()).to.be.equal("0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
@@ -90,22 +90,18 @@ describe('On EdNFT', () => {
 		await expect(await anyone.fetchPrice(0)).to.be.equal(ethers.utils.parseEther("1.0"));
 	})
 	it("Artist can mint for self", async function () {
-		const editions = await hofa.get(0);
 		await expect(await hofa.mint(0)).to.be.equal(await editions.totalSupply()); // returns minted token id
 		await expect(await editions.balanceOf(artist.address)).to.be.equal(1); // token is transferred
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(artist.address); // token ownership has been updated
 	})
 
 	it("Artist can mint multiple editions", async function () {
-		const editions = await hofa.get(0);
 		await expect(await hofa.mintMultiple(0, curator.address, 3)).to.be.equal(await editions.totalSupply()); // returns last minted token id
 		await expect(await editions.balanceOf(curator.address)).to.be.equal(3); // tokens are transferred
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(curator.address); // token ownership has been updated
 	});
 
 	it("Artist can mint for others", async function () {
-		const editions = await hofa.get(0);
-
 		let recipients = new Array<string>(10);
 		for (let i = 0; i < recipients.length; i++) {
 			recipients[i] = receiver.address;
@@ -119,7 +115,6 @@ describe('On EdNFT', () => {
 		await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed")
 	})
 	it("Anyone can mint if authorized", async function () {
-		const editions = await hofa.get(0)
 		await editions.setApprovedMinters([{minter: purchaser.address, amount: 1}]);
 
 		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
@@ -128,15 +123,12 @@ describe('On EdNFT', () => {
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
 	})
 	it("Authorized minter with 0 allowance cannot mint", async function () {
-		const editions = await hofa.get(0)
-
 		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
 		await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed");
 		await expect(await editions.balanceOf(purchaser.address)).to.be.equal(1); // token is transferred
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token ownership has been updated
 	})
 	it("Anyone is able to purchase an edition", async () => {
-		const editions = await hofa.get(0);
 		editions.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
 		
 		const buyer = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
@@ -151,7 +143,6 @@ describe('On EdNFT', () => {
 		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
 	})
 	it("Anyone is able to verify if can mint an edition", async () => {
-		const editions = await hofa.get(0);
 		await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.false;
 		await editions.setApprovedMinters([{minter: signer.address, amount: 50}]); // amount greater than zero allows address
 		await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.true;
@@ -162,12 +153,5 @@ describe('On EdNFT', () => {
 		await expect(await hofa.isAllowedMinter(0, receiver.address)).to.be.true;
 		await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.true;
 		await expect(await hofa.isAllowedMinter(0, shareholder.address)).to.be.true;
-	})
-	
-	describe('the utilities', () => {
-		it('can properly hash from buffer', async () => {
-			const buf = await fs.readFile('./relations.drawio.png');
-			expect(await EdNFT.hash(buf)).to.equal('0x41621bfc79d24cf9365ecf9a0954a6617c011bc19de5aaafa813c1108512ff7d');
-		})
 	})
 });
