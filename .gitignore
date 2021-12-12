@@ -7,3 +7,4 @@ typechain
 dist
 src/types
 deployments/*/solcInputs
+.env
