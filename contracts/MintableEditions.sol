@@ -103,7 +103,8 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * @param _size number of NFTs that can be minted from this contract: set to 0 for unbound
      * @param _price sale price in wei
      * @param _royalties perpetual royalties paid to the creator upon token selling
-     * @param _shares shares in bps destined to the shareholders (one per each shareholder)
+     * @param _shares array of tuples listing the shareholders and their respective shares in bps (one per each shareholder)
+     * @param _allowances array of tuple listing the allowed minters and their allowances
      */
     function initialize(
         address _owner,
