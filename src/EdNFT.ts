@@ -83,7 +83,7 @@ export class EdNFT {
 				for (const log of tx.events!) {
 					if (log.event === "CreatedEditions") {
 						resolve({
-							id: log.args![1] as string, 
+							id: log.args![0] as string, 
 							address: log.args![4] as string, 
 							instance: MintableEditions__factory.connect(log.args![4], this.signerOrProvider)
 						});
