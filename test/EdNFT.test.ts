@@ -55,9 +55,12 @@ describe('On EdNFT', () => {
 			allowances: []
 		}
 		// when
-		const editions = (await hofa.create(info)).instance;
-
+		const response = (await hofa.create(info));
+		
 		// then
+		expect(response.id).to.be.equal(1);
+		expect(response.address.length).to.be.equal(42);
+		const editions = response.instance
 		expect(await editions.name()).to.be.equal("Emanuele");
 		expect(await editions.contentHash()).to.be.equal("0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
 	})
