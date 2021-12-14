@@ -44,7 +44,7 @@ contract MintableEditionsFactory {
      * @param price price for sale in wei
      * @param royalties perpetual royalties paid to the creator upon token selling
      * @param shares array of tuples listing the shareholders and their respective shares in bps (one per each shareholder)
-     * @param allowances array of tuple listing the allowed minters and their allowances
+     * @param allowances array of tuples listing the allowed minters and their allowances
      * @return the address of the editions contract created
      */
     function create(
