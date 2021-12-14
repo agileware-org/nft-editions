@@ -14,23 +14,27 @@ import "./ISplitter.sol";
 
 contract ShakeableSplitter is PaymentSplitterUpgradeable, ISplitter  {
     event PaymentFailed(address to);
-    uint256 payees;
+    uint256 _payees;
 
     constructor() initializer { }
 
-    function initialize(address[] memory _payees, uint256[] memory _shares) public override initializer {
-        __PaymentSplitter_init(_payees, _shares);
-        payees = _payees.length;
+    function initialize(Shares[] memory shares) public override initializer {
+        address[] memory addresses = new address[](shares.length);
+        uint256[] memory bps = new uint256[](shares.length);
         uint256 totalShares = 0;
-        for (uint i = 0; i < _payees.length; i++) {
-            totalShares += _shares[i];
+        _payees = shares.length;
+        for (uint i = 0; i < shares.length; i++) {
+            addresses[i] = shares[i].payee;
+            bps[i] = shares[i].bps;
+            totalShares += shares[i].bps;
         }
         require(totalShares == 10_000, "Shares don't sum up to 100%");
+        __PaymentSplitter_init(addresses, bps);
         
     }
 
     function shake() public {
-        for (uint i = 0; i < payees; i++) {
+        for (uint i = 0; i < _payees; i++) {
             try this.release(payable(super.payee(i))) {
                 // do nothing
             } catch {

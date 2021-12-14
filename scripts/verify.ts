@@ -1,4 +1,4 @@
-import { run, deployments, getChainId } from "hardhat";
+import { run, deployments, getChainId, ethers } from "hardhat";
 import { readFileSync, writeFileSync } from 'fs';
 
 const {get} = deployments;
@@ -26,10 +26,21 @@ async function main() {
   await verify('MintableEditionsFactory', [await (await get('MintableEditions')).address]);
   await verify('PushSplitter', []);
   await verify('ShakeableSplitter', []);
-  await verify('SplitterFactory', [await (await get('PushSplitter')).address]);
-  await verify('SplitterFactory', [await (await get('ShakeableSplitter')).address]);
+  await verify('SplitterFactory', [await (await get('SplitterFactory')).address]);
 
   writeFileSync('./src/addresses.json', JSON.stringify(addresses, null, 2), {encoding: 'utf-8'});
+
+  const types = {
+    "push": ethers.utils.keccak256(Buffer.from("push")),
+    "shakeable": ethers.utils.keccak256(Buffer.from("shakeable")),
+  };
+  writeFileSync('./src/splitters.json', JSON.stringify(types, null, 2), {encoding: 'utf-8'});
+
+  const roles = {
+    "artist": ethers.utils.keccak256(Buffer.from("ARTIST_ROLE")),
+    "admin": 0,
+  };
+  writeFileSync('./src/splitters.json', JSON.stringify(types, null, 2), {encoding: 'utf-8'});
 }
 
 main()

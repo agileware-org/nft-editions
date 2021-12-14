@@ -40,6 +40,7 @@ export class EdNFT {
 
 	private signerOrProvider: Signer | Provider;
 	private factory: MintableEditionsFactory;
+	//const ARTIST_ROLE: ethers.utils.keccak256(Buffer.from("ARTIST_ROLE"));
 
 	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
 		this.signerOrProvider = signerOrProvider;
