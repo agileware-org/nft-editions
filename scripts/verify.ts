@@ -40,7 +40,7 @@ async function main() {
     "artist": ethers.utils.keccak256(Buffer.from("ARTIST_ROLE")),
     "admin": 0,
   };
-  writeFileSync('./src/splitters.json', JSON.stringify(types, null, 2), {encoding: 'utf-8'});
+  writeFileSync('./src/roles.json', JSON.stringify(roles, null, 2), {encoding: 'utf-8'});
 }
 
 main()
