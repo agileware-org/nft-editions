@@ -182,7 +182,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * This operation transfers all ETHs from the contract balance to the owner and shareholders.
+     * Transfers all ETHs from the contract balance to the owner and shareholders.
      */
     function shake() external {
         for (uint i = 0; i < shareholders.length; i++) {
@@ -190,17 +190,23 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
         }
     }
 
+    /**
+     * Transfers `withdrawable(msg.sender)` to the caller.
+     */
     function withdraw() external {
         _withdraw(payable(msg.sender));
     }
 
+    /**
+     * Returns how much the account can withdraw from this contract.
+     */
     function withdrawable(address payable _account) external view returns (uint256) {
         uint256 _totalReceived = address(this).balance + withdrawn;
         return (_totalReceived * shares[_account]) / 10_000 - withdrawals[_account];
     }
 
     /**
-     * This operation attempts to transfer part of the contract balance to the caller, provided the account is a shareholder and
+     * INTERNAL: attempts to transfer part of the contract balance to the caller, provided the account is a shareholder and
      * on the basis of its shares and previous withdrawals.
      *
      * @param _account the address of the shareholder to pay out
@@ -215,14 +221,14 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
     }
 
     /**
-     * Internal: checks if the msg.sender is allowed to mint.
+     * INTERNAL: checks if the msg.sender is allowed to mint.
      */
     function _isAllowedToMint() internal view returns (bool) {
         return (owner() == msg.sender) || _isPublicAllowed() || (allowedMinters[msg.sender] > 0);
     }
     
     /**
-     * Internal: checks if the ZeroAddress is allowed to mint.
+     * INTERNAL: checks if the ZeroAddress is allowed to mint.
      */
     function _isPublicAllowed() internal view returns (bool) {
         return (allowedMinters[address(0x0)] > 0);
@@ -284,7 +290,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * 
      * @param allowances tuples of (address, uint16) describing how many tokens an address is allowed to mint, 0 disables minting
      */
-    function setApprovedMinters(Allowance[] memory allowances) public onlyOwner {
+    function setApprovedMinters(Allowance[] memory allowances) external onlyOwner {
         _setAllowances(allowances);
     }
 
@@ -298,7 +304,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * Allows for updates of edition urls by the owner of the edition.
      * Only URLs can be updated (data-uris are supported), hashes cannot be updated.
      */
-    function updateEditionsURLs(string memory _contentUrl, string memory _thumbnailUrl) public onlyOwner {
+    function updateEditionsURLs(string memory _contentUrl, string memory _thumbnailUrl) external onlyOwner {
         require(bytes(_contentUrl).length > 0, "Empty content URL");
         contentUrl = _contentUrl;
         thumbnailUrl = _thumbnailUrl;
@@ -317,7 +323,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
      * 
      * @param tokenId token edition identifier to burn
      */
-    function burn(uint256 tokenId) public {
+    function burn(uint256 tokenId) external {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "Not approved");
         _burn(tokenId);
     }
