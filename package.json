@@ -9,7 +9,8 @@
   "types": "./index.d.ts",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy": "hardhat deploy && hardhat run scripts/verify.ts",
+    "deploy": "hardhat deploy",
+    "verify": "hardhat run scripts/verify.ts",
     "test": "hardhat test --network hardhat --deploy-fixture",
     "build": "hardhat compile && tsc",
     "postbuild": "npm-prepare-dist && ts-node scripts/prepare.ts",
