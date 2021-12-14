@@ -63,7 +63,7 @@ contract MintableEditionsFactory is AccessControl {
         uint16 royalties,
         MintableEditions.Shares[] memory shares,
         MintableEditions.Allowance[] memory allowances
-    ) external returns (address) {
+    ) external onlyRole(ARTIST_ROLE) returns (address) {
         require(!_contents[info.contentHash], "Duplicated content");
         _contents[info.contentHash] = true;
         uint256 id = _counter.current();
