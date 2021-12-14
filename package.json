@@ -9,11 +9,10 @@
   "types": "./index.d.ts",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy": "hardhat deploy",
+    "deploy": "hardhat deploy && hardhat run scripts/verify.ts",
     "test": "hardhat test --network hardhat --deploy-fixture",
     "build": "hardhat compile && tsc",
     "postbuild": "npm-prepare-dist && ts-node scripts/prepare.ts",
-    "verify": "hardhat run scripts/verify.ts",
     "clean": "rm -rf dist",
     "postversion": "git push && git push --tags"
   },
