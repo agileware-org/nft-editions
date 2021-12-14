@@ -11,22 +11,32 @@ import {
 } from "../src/types";
 
 describe("MintableEditionsFactory", function () {
+  let deployer: SignerWithAddress;
   let artist: SignerWithAddress;
   let shareholder: SignerWithAddress;
   let other: SignerWithAddress;
   let factory: MintableEditionsFactory;
+
+  const info = {
+    name: "Roberto Lo Giacco", 
+    symbol: "RLG",
+    description: "**Me**, _myself_ and I.",
+    contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
+    contentHash: "0x04db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
+    thumbnailUrl: ""
+  }
   
   beforeEach(async () => {
     const { MintableEditionsFactory } = await deployments.fixture(["Editions"]);
-    const dynamicMintableAddress = (await deployments.get("MintableEditions")).address;
+    [deployer, artist, shareholder, other] = await ethers.getSigners();
     factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
-    [artist, shareholder, other] = await ethers.getSigners();
+    await factory.grantRole(await factory.ARTIST_ROLE(), await artist.address);
   });
 
   it("Should emit a CreatedEditions event upon create", async function () {
     expect(await factory.instances()).to.be.equal(0);
     const expectedAddress = await factory.get(0);
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto", 
         symbol: "RLG",
@@ -49,7 +59,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should produce an initialized MintableEditions instance upon create", async function () {
-    const receipt = await (await factory.create(
+    const receipt = await (await factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -91,7 +101,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation for an already minted content", async function () {
-    const receipt = await (await factory.create(
+    const receipt = await (await factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -114,7 +124,7 @@ describe("MintableEditionsFactory", function () {
       }
     }
     await expect(contractAddress).to.not.be.equal("0x0");
-    await expect(factory.connect(other).create(
+    await expect(factory.connect(deployer).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -131,8 +141,13 @@ describe("MintableEditionsFactory", function () {
     )).to.be.revertedWith("Duplicated content");
   });
 
+  it("Should accept creation from artists only", async function () {
+    await expect(factory.connect(other).create(info, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
+    await expect(factory.connect(shareholder).create(info, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
+  });
+
   it("Should accept creation with no royalties", async function () {
-    await factory.create(
+    await factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -152,7 +167,7 @@ describe("MintableEditionsFactory", function () {
   });
   
   it("Should reject creation for invalid royalties", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -170,7 +185,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should accept creation with multiple shareholders", async function () {
-    await factory.create(
+    await factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -189,7 +204,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation with duplicated shareholders", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -207,7 +222,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation with artist among shareholders", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -225,7 +240,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation with zero-address among shareholders", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -243,7 +258,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation with a shares sum above 100%", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -261,7 +276,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation with 0% shares", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -279,7 +294,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation with shares above 100%", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -297,7 +312,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation without contentUrl", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -315,7 +330,7 @@ describe("MintableEditionsFactory", function () {
   });
 
   it("Should reject creation without contentHash", async function () {
-    await expect(factory.create(
+    await expect(factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco", 
         symbol: "RLG",
@@ -330,5 +345,21 @@ describe("MintableEditionsFactory", function () {
       [{holder: (await shareholder.getAddress()), bps: 1000}],
       []
     )).to.be.rejectedWith(Error, 'INVALID_ARGUMENT');
+  });
+
+  it("Should accept role granting from deployer only", async function () {
+    await expect(factory.connect(artist).grantRole(await factory.ARTIST_ROLE(), other.address)).to.be.revertedWith("AccessControl");
+    await expect(factory.connect(other).grantRole(await factory.ARTIST_ROLE(), other.address)).to.be.revertedWith("AccessControl");
+    await expect(factory.connect(shareholder).grantRole(await factory.ARTIST_ROLE(), other.address)).to.be.revertedWith("AccessControl");
+
+    // grant
+    await expect(factory.connect(other).create(info, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
+    await factory.connect(deployer).grantRole(await factory.ARTIST_ROLE(), other.address);
+    await factory.connect(other).create(info, 2500, 0, 150, [], []);
+    
+    // revoke
+    await factory.connect(deployer).revokeRole(await factory.ARTIST_ROLE(), other.address);
+    await expect(factory.connect(other).create({ ...info, 
+      contentHash: "0x07db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc" }, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
   });
 });

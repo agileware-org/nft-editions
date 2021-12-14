@@ -10,10 +10,12 @@ pragma solidity ^0.8.6;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./MintableEditions.sol";
 
-contract MintableEditionsFactory {
+contract MintableEditionsFactory is AccessControl {
+    bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Counter for current contract id
@@ -30,9 +32,16 @@ contract MintableEditionsFactory {
      * 
      * @param implementation Edition implementation contract to clone
      */
-    constructor(address _implementation) {
-        implementation = _implementation;
+    constructor(address implementation) {
+        _implementation = implementation;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ARTIST_ROLE, msg.sender);
     }
+
+    function setImplementation(address implementation) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _implementation = implementation;
+    }
+
 
     /**
      * Creates a new editions contract as a factory with a deterministic address, returning the address of the newly created contract.

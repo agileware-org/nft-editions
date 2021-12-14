@@ -2,13 +2,18 @@ import { promises as fs } from 'fs';
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { EdNFT } from "../src/EdNFT"
-import { MintableEditions } from '../src/types';
+import { MintableEditions, MintableEditionsFactory, MintableEditionsFactory__factory } from '../src/types';
+import { fail } from 'assert';
+
+
 
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
 describe('On EdNFT', () => {
 	let hofa: EdNFT;
+	let factoryAddress: string;
+	let deployer: SignerWithAddress;
 	let artist: SignerWithAddress;
 	let curator: SignerWithAddress;
 	let shareholder: SignerWithAddress;
@@ -19,8 +24,11 @@ describe('On EdNFT', () => {
 	let editions: MintableEditions;
 	
 	before(async () => {
-		[artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // recupero un wallet con cui eseguire il test
-		hofa = new EdNFT(artist, (await deployments.get("MintableEditionsFactory")).address); // recupero l'indirizzo della factory deployata da --deploy-fixture
+		[deployer, artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // test wallets
+		factoryAddress = (await deployments.get("MintableEditionsFactory")).address; // factory address as deployed by --deploy-fixture
+		const factory = MintableEditionsFactory__factory.connect(factoryAddress, deployer);
+		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
+		hofa = new EdNFT(artist, factoryAddress);
 		const info:EdNFT.Definition = {
 			info: {
 				name: "Emanuele",
@@ -156,5 +164,19 @@ describe('On EdNFT', () => {
 		await expect(await hofa.isAllowedMinter(0, receiver.address)).to.be.true;
 		await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.true;
 		await expect(await hofa.isAllowedMinter(0, shareholder.address)).to.be.true;
+	})
+
+	it("Deployer can grant/revoke artists", async () => {
+		hofa.grantArtist(signer.address).then(() => fail("Should have failed"),() => {});
+		hofa.revokeArtist(artist.address).then(() => fail("Should have failed"),() => {});
+
+		const admin = new EdNFT(deployer, factoryAddress);
+		await expect(await admin.isArtist(signer.address)).to.be.false;
+
+		await expect(await admin.grantArtist(signer.address)).to.be.true;
+		await expect(await admin.isArtist(signer.address)).to.be.true;
+
+		await expect(await admin.revokeArtist(signer.address)).to.be.true;
+		await expect(await admin.isArtist(signer.address)).to.be.false;
 	})
 });

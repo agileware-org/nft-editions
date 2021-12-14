@@ -10,6 +10,7 @@ import { MintableEditionsFactory__factory, MintableEditions__factory } from './t
 import type { MintableEditionsFactory, MintableEditions } from './types';
 import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 import addresses from './addresses.json';
+import { ethers } from 'ethers';
 
 export declare namespace EdNFT {
 	interface Definition {
@@ -52,6 +53,11 @@ export class EdNFT {
 		}
 	}
 
+	/**
+	 * Determines the chain identifier 
+	 * 
+	 * @param signerOrProvider the signer or the provider
+	 */
 	public static async getChainId(signerOrProvider: Signer | Provider): Promise<number> {
 		return new Promise((resolve, reject) => {
 			const chainId = (signerOrProvider as Signer).getChainId()
@@ -64,9 +70,12 @@ export class EdNFT {
 		});
 	}
 
-	// Write functions
-	// Creates a new MeNFT
-	// @param info
+	/**
+	 * Creates a new EdNFT
+	 * 
+	 * @param props the properties to assign to the editionable NFT to create
+	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 */
 	public async create(props:EdNFT.Definition, confirmations:number = 1): Promise<{id:string, address:string, instance:MintableEditions}> {
 		return new Promise( (resolve, reject) => { (async() => {
 			try {
@@ -95,9 +104,73 @@ export class EdNFT {
 		})()});
 	}
 
-	// purchase a MeNFT by it's id
-	// @param editionsId
-	// @parma value
+	/**
+	 * Grants artist permissions to an address
+	 * 
+	 * @param address the address to grant
+	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 */
+	public async grantArtist(artist:string, confirmations:number = 1): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				const tx = await (await this.factory.grantRole(await this.factory.ARTIST_ROLE(), artist))
+					.wait(confirmations);
+				for (const log of tx.events!) {
+					if (log.event === "RoleGranted") {
+						resolve(true);
+					}
+				}
+				resolve(false);
+			} catch (err) {
+				reject(err);
+			}
+		})();});
+	}
+
+	/**
+	 * Revokes artist permissions from an address
+	 * 
+	 * @param address the address to revoke
+	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 */
+	public async revokeArtist(artist:string, confirmations:number = 1): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				const tx = await (await this.factory.revokeRole(await this.factory.ARTIST_ROLE(), artist))
+					.wait(confirmations);
+				for (const log of tx.events!) {
+					if (log.event === "RoleRevoked") {
+						resolve(true);
+					}
+				}
+				resolve(false);
+			} catch (err) {
+				reject(err);
+			}
+		})();});
+	}
+
+	/**
+	 * Checks if an address is listed as artist
+	 * 
+	 * @param address the address to check, defaults to current signer
+	 */
+	public async isArtist(address:string|undefined): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				resolve(this.factory.hasRole(await this.factory.ARTIST_ROLE(), address||await (this.signerOrProvider as Signer).getAddress()));
+			} catch (err) {
+				reject(err);
+			}
+		})();});
+	}
+
+	/**
+	 * Purchases an edition of an EdNFT
+	 * 
+	 * @param id the EdNFT identifier
+	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 */
 	public async purchase(id:BigNumberish, confirmations:number = 1): Promise<BigNumber> {
 		return new Promise( (resolve, reject) => { (async() => {
 			try {
@@ -119,8 +192,12 @@ export class EdNFT {
 		})()});
 	}
 
-	// mint a MeNFT by it's id
-	// @param editionsId
+	/**
+	 * Mints an edition of an EdNFT
+	 * 
+	 * @param id the EdNFT identifier
+	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 */
 	public async mint(id:BigNumberish, confirmations:number = 1):Promise<BigNumber>{
 		return new Promise((resolve, reject) => { (async() => {
 			try {
@@ -139,9 +216,14 @@ export class EdNFT {
 	}
 
 
-	// multiple mint for one address a MeNFT by it's id
-	// @param editionsId
-	// @param count
+	/**
+	 * Mints multiple editions of an EdNFT
+	 * 
+	 * @param id the EdNFT identifier
+	 * @param receiver the receiver of the editions
+	 * @param count number of editions to mint
+	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 */
 	public async mintMultiple(id:BigNumberish, receiver: string, count:number, confirmations:number = 1):Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
@@ -166,10 +248,14 @@ export class EdNFT {
 		})()});
 	}
 
-	// Multiple mint for many address a MeNFT by it's id
-	// @param editionsId
-	// @param recipients
-	// @param count - default 1
+	/**
+	 * Mints multiple editions of an EdNFT for firrente recipients
+	 * 
+	 * @param id the EdNFT identifier
+	 * @param recipients list of addresses receiving the editions
+	 * @param count number of instances to mint for each recipient
+	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 */
 	public async mintAndTransfer(id:BigNumberish, recipients:Array<string>, count:number = 1, confirmations:number = 1):Promise<BigNumber> {
 		let addresses: Array<string> = [];
 		for (const addr of recipients!) {
@@ -192,11 +278,11 @@ export class EdNFT {
 		})()});
 	}
 
-	//////////////////////////////////////////
-
-	// MintableEditionsFactory functions
-	// Retrieves a MeNFT by it's id
-	// @param id
+	/**
+	 * Retrieves an EdNFT
+	 * 
+	 * @param id the EdNFT identifier
+	 */
 	public async get(id: BigNumberish): Promise<{address:string, instance:MintableEditions}> {
 		return new Promise((resolve) => {
 			this.factory.get(id).then((address) => {
@@ -208,17 +294,20 @@ export class EdNFT {
 		});
 	}
 
-	// Retrieves a total MeNFT 
+	/**
+	 * Retreves the amount of EdNFTs produced so far
+	 */
 	public async instances(): Promise<BigNumber> {
 		return new Promise((resolve) => {
 			resolve(this.factory.instances());
 		});
 	}
-	////////////////////////////////////////////
-
-	// Read functions
-	// Fetch EdNFT price
-	// @param editionID
+	
+	/**
+	 * Retrieves the price of an EdNFT
+	 * 
+	 * @param id the EdNFT identifier
+	 */
 	public async fetchPrice(id:BigNumberish): Promise<BigNumber> {
 		return new Promise((resolve) => {
 			this.factory.get(id).then((address) => {
@@ -227,18 +316,19 @@ export class EdNFT {
 			});
 		});
 	}
-	////////////////////////////////////////////
 
-	// Miscellaneous functions
-	// verify if signer can mint a EdNFT
-	// @param editionID
-	// @param signer
-	public async isAllowedMinter(id:BigNumberish, address:string): Promise<boolean> {
+	/**
+	 * Verifies if an address is entitled to mint
+	 * 
+	 * @param id the EdNFT identifier
+	 * @param address the address to verify, defaults to current wallet
+	 */
+	public async isAllowedMinter(id:BigNumberish, address:string | undefined): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = (await this.get(id)).instance;
 				resolve(await edition.owner() === address || 
-					await edition.allowedMinters(address) > 0 || 
+					await edition.allowedMinters(address||await (this.signerOrProvider as Signer).getAddress()) > 0 || 
 					await edition.allowedMinters("0x0000000000000000000000000000000000000000") > 0);
 			} catch (err) {
 				reject(err);
