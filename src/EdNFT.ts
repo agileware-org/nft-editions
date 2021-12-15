@@ -235,7 +235,7 @@ export class EdNFT {
 			this.factory.get(id).then((address) => {
 				resolve({
 					address: address,
-					instance: MintableEditions__factory.connect(address, this.signerOrProvider)
+					instance: MintableEditions__factory.connect(address, this.signerOrProvider).connect(this.signerOrProvider)
 				});
 			});
 		});
