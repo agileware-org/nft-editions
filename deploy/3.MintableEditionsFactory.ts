@@ -15,4 +15,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 export default func;
 func.dependencies = ['MintableEditions'];
-func.tags = ["Editions"];
+func.tags = ["editions"];

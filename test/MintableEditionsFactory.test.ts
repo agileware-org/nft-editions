@@ -1,7 +1,3 @@
-require("chai").use(require('chai-as-promised'));
-const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
-
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -9,6 +5,10 @@ import {
   MintableEditions,
   MintableEditionsFactory__factory,
 } from "../src/types";
+
+require("chai").use(require('chai-as-promised'));
+const { expect } = require("chai");
+const { ethers, deployments } = require("hardhat");
 
 describe("MintableEditionsFactory", function () {
   let deployer: SignerWithAddress;
@@ -27,7 +27,7 @@ describe("MintableEditionsFactory", function () {
   }
   
   beforeEach(async () => {
-    const { MintableEditionsFactory } = await deployments.fixture(["Editions"]);
+    const { MintableEditionsFactory } = await deployments.fixture(["editions"]);
     [deployer, artist, shareholder, other] = await ethers.getSigners();
     factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
     await factory.grantRole(await factory.ARTIST_ROLE(), await artist.address);

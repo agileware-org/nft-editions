@@ -1,11 +1,8 @@
-import { promises as fs } from 'fs';
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { EdNFT } from "../src/EdNFT"
-import { MintableEditions, MintableEditionsFactory, MintableEditionsFactory__factory } from '../src/types';
+import { MintableEditions, MintableEditionsFactory__factory } from '../src/types';
 import { fail } from 'assert';
-
-
 
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");

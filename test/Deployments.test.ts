@@ -1,6 +1,6 @@
-const {ethers} = require("hardhat");
-
 import "@nomiclabs/hardhat-ethers";
+
+import { ethers } from "hardhat";
 
 describe("Deployments", function () {
 

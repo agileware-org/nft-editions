@@ -1,12 +1,12 @@
-const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
-
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   MintableEditionsFactory,
   MintableEditions,
 } from "../src/types";
+
+const { expect } = require("chai");
+const { ethers, deployments } = require("hardhat");
 
 describe("MintableEditions", function () {
   let artist: SignerWithAddress;
@@ -22,7 +22,7 @@ describe("MintableEditions", function () {
   
   beforeEach(async () => {
     [artist, curator, shareholder, buyer, minter, receiver, purchaser] = await ethers.getSigners();
-    const { MintableEditionsFactory } = await deployments.fixture(["Editions"]);
+    const { MintableEditionsFactory } = await deployments.fixture(["editions"]);
     factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
     const receipt = await (await factory.connect(artist).create(
       {
@@ -92,7 +92,6 @@ describe("MintableEditions", function () {
     await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 0}])).to.be.revertedWith("Ownable: caller is not the owner");
- 
   });
 
   it("Artist only can reduce/increase allowances to minters", async function () {
@@ -104,7 +103,6 @@ describe("MintableEditions", function () {
     await expect(editions.connect(minter).setApprovedMinters([{minter: minter.address, amount: 39}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(purchaser).setApprovedMinters([{minter: minter.address, amount: 2}])).to.be.revertedWith("Ownable: caller is not the owner");
     await expect(editions.connect(receiver).setApprovedMinters([{minter: minter.address, amount: 60}])).to.be.revertedWith("Ownable: caller is not the owner");
-
   });
 
   it("Artist only can set sale price", async function () {
