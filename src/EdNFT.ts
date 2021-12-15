@@ -37,9 +37,12 @@ export declare namespace EdNFT {
 }
 
 export class EdNFT {
-
 	private signerOrProvider: Signer | Provider;
 	private factory: MintableEditionsFactory;
+
+	public static unwrapDescription(description:string): string {
+		return description.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t").replace(/\\"/g, '"')
+	}
 
 	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
 		this.signerOrProvider = signerOrProvider;
@@ -62,7 +65,7 @@ export class EdNFT {
 		return new Promise((resolve, reject) => {
 			const chainId = (signerOrProvider as Signer).getChainId()
 			if (chainId === undefined) {
-				(signerOrProvider as Provider).getNetwork().then(network => {
+				(signerOrProvider as Provider).getNetwork().then((network: { chainId: number | PromiseLike<number>; }) => {
 					resolve(network.chainId);
 				});
 			}
@@ -83,7 +86,7 @@ export class EdNFT {
 					.create({
 						name: props.info.name,
 						symbol: props.info.symbol,
-						description: props.info.description,
+						description: props.info.description.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t").replace(/"/g, '\\"'),
 						contentUrl: props.info.contentUrl,
 						contentHash: props.info.contentHash,
 						thumbnailUrl: props.info.thumbnailUrl || ""
