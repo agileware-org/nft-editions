@@ -1,41 +1,33 @@
-import { ethers, upgrades } from "hardhat";
+import { deployments, getChainId } from "hardhat";
+import { readFileSync, writeFileSync } from 'fs';
+import { ethers } from "ethers";
 
-async function deploy(contract: string) {
-  console.log("Deploying " + contract + " in progress...");
-  const factory = await ethers.getContractFactory(contract);
-  const instance = await factory.deploy();
-  await instance.deployed();
-  console.log(contract + " deployed to: ", instance.address);
-  return instance.address;
-}
+const {get} = deployments;
+let contracts:{[name: string]: string} = {};
+let roles:{[name: string]: string} = {};
 
-async function deployWithArgs(contract: string, args: string) {
-  console.log("Deploying " + contract + " in progress...")
-  const factory = await ethers.getContractFactory(contract);
-  const instance = await factory.deploy(args);
-  await instance.deployed();
-  console.log(contract + " deployed to: ", instance.address);
-  return instance.address;
-}
-async function deployWithProxy(contract: string) {
-  console.log("Deploying " + contract + " in progress...")
-  const factory = await ethers.getContractFactory(contract);
-  const proxy = await upgrades.deployProxy(factory, [], { initializer: false, kind: 'uups' });
-  await proxy.deployed();
-  console.log(contract + " deployed to: ", proxy.address);
-  return proxy.address;
+async function addressOf(contract:string) {
+  const deployment = await get(contract);
+  contracts[contract] = deployment.address;
 }
 
 async function main() {
-  const metadata = await deploy("EditionMetadata");
-  const editions = await deployWithArgs("MintableEditions", metadata);
-  const factory = await deployWithArgs("MintableEditionsFactory", editions);
+  const addresses = JSON.parse(readFileSync("./src/addresses.json", "utf-8"));
+  addresses[await getChainId()] = contracts;
+  
+  await addressOf('EditionsMetadataHelper');
+  await addressOf('MintableEditions');
+  await addressOf('MintableEditionsFactory');
+  writeFileSync('./src/addresses.json', JSON.stringify(addresses, null, 2), {encoding: 'utf-8'});
+
+  roles["admin"] = await ethers.constants.HashZero;
+  roles["artist"] = await ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ARTIST_ROLE"));
+  writeFileSync('./src/roles.json', JSON.stringify(roles, null, 2), {encoding: 'utf-8'});
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
-

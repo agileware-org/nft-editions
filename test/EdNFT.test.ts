@@ -176,4 +176,10 @@ describe('On EdNFT', () => {
 		await expect(await admin.revokeArtist(signer.address)).to.be.true;
 		await expect(await admin.isArtist(signer.address)).to.be.false;
 	})
+
+	it("Anyone can check role admin", async () => {
+		const admin = new EdNFT(deployer, factoryAddress);
+		await expect(await admin.isAdmin(signer.address)).to.be.false;
+		await expect(await admin.isAdmin(deployer.address)).to.be.true;
+	})
 });
