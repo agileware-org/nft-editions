@@ -23,7 +23,8 @@ describe("Deployments", function () {
     const shakeableSplitter = await ShakeableSplitter.deploy();
 
     const SplitterFactory = await ethers.getContractFactory("SplitterFactory");
-    await SplitterFactory.deploy(pushSplitter.address);
-    await SplitterFactory.deploy(shakeableSplitter.address);
+    const factory = await SplitterFactory.deploy();
+    await SplitterFactory.deploy();
+  
   });
 });
