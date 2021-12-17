@@ -1,9 +1,11 @@
+/* eslint-disable node/no-missing-import */
+/* eslint-disable camelcase */
 import "@nomiclabs/hardhat-ethers";
 
 import { ethers } from "hardhat";
+import { SplitterFactory, SplitterFactory__factory } from "../src/types";
 
 describe("Deployments", function () {
-
   it("Should deploy MintableEditionsFactory", async function () {
     const EditionsMetadataHelper = await ethers.getContractFactory("EditionsMetadataHelper");
     const metadata = await EditionsMetadataHelper.deploy();
@@ -24,7 +26,12 @@ describe("Deployments", function () {
 
     const SplitterFactory = await ethers.getContractFactory("SplitterFactory");
     const factory = await SplitterFactory.deploy();
-    await SplitterFactory.deploy();
-  
+
+    const [deployer] = await ethers.getSigners();
+    const instance = SplitterFactory__factory.connect(factory.address, deployer) as SplitterFactory;
+    const push = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("push"));
+    const shake = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("shake"));
+    instance.addSplitterType(push, pushSplitter.address);
+    instance.addSplitterType(shake, shakeableSplitter.address);
   });
 });

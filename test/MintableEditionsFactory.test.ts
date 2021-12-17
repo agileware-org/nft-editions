@@ -1,12 +1,9 @@
+/* eslint-disable node/no-missing-import */
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {
-  MintableEditionsFactory,
-  MintableEditions,
-  MintableEditionsFactory__factory,
-} from "../src/types";
+import { MintableEditionsFactory, MintableEditions } from "../src/types";
 
-require("chai").use(require('chai-as-promised'));
+require("chai").use(require("chai-as-promised"));
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
@@ -18,14 +15,14 @@ describe("MintableEditionsFactory", function () {
   let factory: MintableEditionsFactory;
 
   const info = {
-    name: "Roberto Lo Giacco", 
+    name: "Roberto Lo Giacco",
     symbol: "RLG",
     description: "**Me**, _myself_ and I.",
     contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
     contentHash: "0x04db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc",
     thumbnailUrl: ""
-  }
-  
+  };
+
   beforeEach(async () => {
     const { MintableEditionsFactory } = await deployments.fixture(["editions"]);
     [deployer, artist, shareholder, other] = await ethers.getSigners();
@@ -38,7 +35,7 @@ describe("MintableEditionsFactory", function () {
     const expectedAddress = await factory.get(0);
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto", 
+        name: "Roberto",
         symbol: "RLG",
         description: "**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)",
         contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
@@ -48,20 +45,19 @@ describe("MintableEditionsFactory", function () {
       1000,
       0,
       250,
-      [{holder: (await shareholder.getAddress()), bps: 1500}],
+      [{ holder: (await shareholder.getAddress()), bps: 1500 }],
       []))
 
       .to.emit(factory, "CreatedEditions");
-    
+
     expect(await factory.instances()).to.be.equal(1);
     expect(await factory.get(0)).to.be.equal(expectedAddress);
-    
   });
 
   it("Should produce an initialized MintableEditions instance upon create", async function () {
     const receipt = await (await factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I. A gentle reminder to take care of our inner child, avoiding to take ourselves too seriously, no matter the circumstances: we are just _'a blade of grass'_. See [my website](http://www.agileware.org)",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -71,8 +67,8 @@ describe("MintableEditionsFactory", function () {
       2500,
       ethers.utils.parseEther("1.0"),
       150,
-      [{holder: (await shareholder.getAddress()), bps: 500}],
-      [{minter: artist.address, amount: 100}, {minter: shareholder.address, amount: 50}]
+      [{ holder: (await shareholder.getAddress()), bps: 500 }],
+      [{ minter: artist.address, amount: 100 }, { minter: shareholder.address, amount: 50 }]
     )).wait();
 
     let contractAddress = "0x0";
@@ -103,7 +99,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation for an already minted content", async function () {
     const receipt = await (await factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "ipfs://QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -126,7 +122,7 @@ describe("MintableEditionsFactory", function () {
     await expect(contractAddress).to.not.be.equal("0x0");
     await expect(factory.connect(deployer).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -149,7 +145,7 @@ describe("MintableEditionsFactory", function () {
   it("Should accept creation with no royalties", async function () {
     await factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -165,11 +161,11 @@ describe("MintableEditionsFactory", function () {
     const editions = (await ethers.getContractAt("MintableEditions", await factory.get(0))) as MintableEditions;
     await expect(await editions.royalties()).to.be.equal(0x0);
   });
-  
+
   it("Should reject creation for invalid royalties", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -187,7 +183,7 @@ describe("MintableEditionsFactory", function () {
   it("Should accept creation with multiple shareholders", async function () {
     await factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -197,16 +193,15 @@ describe("MintableEditionsFactory", function () {
       0,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 1000}, {holder: (await other.getAddress()), bps: 500}],
+      [{ holder: (await shareholder.getAddress()), bps: 1000 }, { holder: (await other.getAddress()), bps: 500 }],
       []
     );
-    const editions = (await ethers.getContractAt("MintableEditions", await factory.get(0))) as MintableEditions;
   });
 
   it("Should reject creation with duplicated shareholders", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -216,7 +211,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 1000}, {holder: (await shareholder.getAddress()), bps: 500}],
+      [{ holder: (await shareholder.getAddress()), bps: 1000 }, { holder: (await shareholder.getAddress()), bps: 500 }],
       []
     )).to.be.revertedWith("Shareholder already has shares");
   });
@@ -224,7 +219,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation with artist among shareholders", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -234,7 +229,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 1000}, {holder: (await artist.getAddress()), bps: 500}],
+      [{ holder: (await shareholder.getAddress()), bps: 1000 }, { holder: (await artist.getAddress()), bps: 500 }],
       []
     )).to.be.revertedWith("Shareholder already has shares");
   });
@@ -242,7 +237,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation with zero-address among shareholders", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -252,7 +247,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: ethers.constants.AddressZero, bps: 1000}, {holder: (await artist.getAddress()), bps: 500}],
+      [{ holder: ethers.constants.AddressZero, bps: 1000 }, { holder: (await artist.getAddress()), bps: 500 }],
       []
     )).to.be.revertedWith("Shareholder is zero address");
   });
@@ -260,7 +255,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation with a shares sum above 100%", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -270,7 +265,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 9000}, {holder: (await artist.getAddress()), bps: 1500}],
+      [{ holder: (await shareholder.getAddress()), bps: 9000 }, { holder: (await artist.getAddress()), bps: 1500 }],
       []
     )).to.be.revertedWith("Shares too high");
   });
@@ -278,7 +273,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation with 0% shares", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -288,7 +283,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 0}, {holder: (await artist.getAddress()), bps: 500}],
+      [{ holder: (await shareholder.getAddress()), bps: 0 }, { holder: (await artist.getAddress()), bps: 500 }],
       []
     )).to.be.revertedWith("Shares are invalid");
   });
@@ -296,7 +291,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation with shares above 100%", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -306,7 +301,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 11000}],
+      [{ holder: (await shareholder.getAddress()), bps: 11000 }],
       []
     )).to.be.revertedWith("Shares are invalid");
   });
@@ -314,7 +309,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation without contentUrl", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "",
@@ -324,7 +319,7 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 1000}],
+      [{ holder: (await shareholder.getAddress()), bps: 1000 }],
       []
     )).to.be.revertedWith("Empty content URL");
   });
@@ -332,7 +327,7 @@ describe("MintableEditionsFactory", function () {
   it("Should reject creation without contentHash", async function () {
     await expect(factory.connect(artist).create(
       {
-        name: "Roberto Lo Giacco", 
+        name: "Roberto Lo Giacco",
         symbol: "RLG",
         description: "**Me**, _myself_ and I.",
         contentUrl: "https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d",
@@ -342,9 +337,9 @@ describe("MintableEditionsFactory", function () {
       500,
       0,
       150,
-      [{holder: (await shareholder.getAddress()), bps: 1000}],
+      [{ holder: (await shareholder.getAddress()), bps: 1000 }],
       []
-    )).to.be.rejectedWith(Error, 'INVALID_ARGUMENT');
+    )).to.be.rejectedWith(Error, "INVALID_ARGUMENT");
   });
 
   it("Should accept role granting from deployer only", async function () {
@@ -356,10 +351,12 @@ describe("MintableEditionsFactory", function () {
     await expect(factory.connect(other).create(info, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
     await factory.connect(deployer).grantRole(await factory.ARTIST_ROLE(), other.address);
     await factory.connect(other).create(info, 2500, 0, 150, [], []);
-    
+
     // revoke
     await factory.connect(deployer).revokeRole(await factory.ARTIST_ROLE(), other.address);
-    await expect(factory.connect(other).create({ ...info, 
-      contentHash: "0x07db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc" }, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
+    await expect(factory.connect(other).create({
+      // eslint-disable-next-line node/no-unsupported-features/es-syntax
+      ...info, contentHash: "0x07db57416b770a06b3b2123531e68d67e9d96872f453fa77bc413e9e53fc1bfc"
+    }, 2500, 0, 150, [], [])).to.be.revertedWith("AccessControl");
   });
 });
