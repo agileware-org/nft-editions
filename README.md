@@ -7,6 +7,13 @@ Solidity smart contracts implementing ERC721 with multiple editions. We will cal
 
 Once minted, the editions behave very much like any other NFT implementing the `ERC-721` specifications: they can be transferred, auctioned and burnt as their specific owner decide.
 
+# Standards
+
+The EdNFTs comply with the following EIP standards:
+
+* [ERC-721](https://eips.ethereum.org/EIPS/eip-721) Non-Fungible Token
+* [ERC-2981](https://eips.ethereum.org/EIPS/eip-2981) NFT Royalty
+
 # Properties
 
 Instances of this contract are what we call `EdNFT` and. can be obtained by using the `create` operation on the `MintableEditionsFactory` contract, with a substantial saving in gas.
