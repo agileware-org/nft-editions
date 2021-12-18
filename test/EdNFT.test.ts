@@ -22,7 +22,7 @@ describe("On EdNFT", () => {
 	let editions: MintableEditions;
 
 	before(async () => {
-		[deployer, artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // test wallets
+		[deployer, artist, shareholder, curator, receiver, purchaser, signer] = await ethers.getSigners(); // test wallets
 		factoryAddress = (await deployments.get("MintableEditionsFactory")).address; // factory address as deployed by --deploy-fixture
 		const factory = MintableEditionsFactory__factory.connect(factoryAddress, deployer);
 		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
