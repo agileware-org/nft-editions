@@ -1,3 +1,4 @@
+/* eslint-disable node/no-missing-import */
 /* eslint-disable camelcase */
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -17,7 +18,6 @@ describe("On EdNFT", () => {
 	let shareholder: SignerWithAddress;
 	let receiver: SignerWithAddress;
 	let purchaser: SignerWithAddress;
-	let minter: SignerWithAddress;
 	let signer: SignerWithAddress;
 	let editions: MintableEditions;
 
