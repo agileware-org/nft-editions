@@ -195,9 +195,11 @@ describe("On EdNFT", () => {
 	it("Wrapper is able to escape definition data", async () => {
 		const info:EdNFT.Definition = {
 			info: {
-				name: "The \"Big\" Lele",
+				// eslint-disable-next-line quotes
+				name: 'The "Big" Lele',
 				symbol: "LE\\LE",
-				description: "This \"is\" something\nneeding \\/ escaping",
+				// eslint-disable-next-line quotes
+				description: 'This "is" something\nneeding \\/ escaping',
 				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x2f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca"
 			},
