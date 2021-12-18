@@ -93,10 +93,18 @@ describe("On EdNFT", () => {
 		expect(await editions.connect(artist).shares(artist.address)).to.be.equal(10000);
 	});
 
-	it("Anyone can retrive price of a MeNFT", async () => {
+	it("Anyone can retrive info of a MeNFT", async () => {
 		const anyone = new EdNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
+		const nft = await (await anyone.get(0)).instance;
 
-		await expect(await anyone.fetchPrice(0)).to.be.equal(ethers.utils.parseEther("1.0"));
+		await expect(await nft.name()).to.be.equal("Emanuele");
+		await expect(await nft.symbol()).to.be.equal("LELE");
+		await expect(await nft.contentUrl()).to.be.equal("https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu");
+		await expect(await nft.contentHash()).to.be.equal("0x1f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
+		await expect(await nft.thumbnailUrl()).to.be.equal("");
+		await expect(await nft.price()).to.be.equal(ethers.utils.parseEther("1.0"));
+		await expect(await nft.size()).to.be.equal(1000);
+		await expect(await nft.royalties()).to.be.equal(250);
 	});
 	it("Artist can mint for self", async function () {
 		await expect(await hofa.mint(0)).to.be.equal(await editions.totalSupply()); // returns minted token id
@@ -182,5 +190,54 @@ describe("On EdNFT", () => {
 		const admin = new EdNFT(deployer, factoryAddress);
 		await expect(await admin.isAdmin(signer.address)).to.be.false;
 		await expect(await admin.isAdmin(deployer.address)).to.be.true;
+	});
+
+	it("Wrapper is able to escape definition data", async () => {
+		const info:EdNFT.Definition = {
+			info: {
+				name: "The \"Big\" Lele",
+				symbol: "LE\\LE",
+				description: "This \"is\" something\nneeding \\/ escaping",
+				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+				contentHash: "0x2f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca"
+			},
+			size: 500
+		};
+		// when
+		const response = (await hofa.create(info));
+		// then
+		const editions = response.instance;
+		expect(await editions.name()).to.be.equal("The \\\"Big\\\" Lele");
+		expect(await editions.symbol()).to.be.equal("LE\\\\LE");
+		expect(await editions.description()).to.be.equal("This \\\"is\\\" something\\nneeding \\\\/ escaping");
+
+		await editions.mint();
+		const dataUri = await editions.tokenURI(1);
+		const metadata = JSON.parse(Buffer.from(dataUri.substring(dataUri.indexOf("base64,") + 7), "base64").toString());
+		// eslint-disable-next-line quotes
+		expect(metadata.name).to.be.equal('The "Big" Lele 1/500');
+		// eslint-disable-next-line quotes
+		expect(metadata.description).to.be.equal('This "is" something\nneeding \\/ escaping');
+		// eslint-disable-next-line quotes
+		expect(metadata.properties.name).to.be.equal('The "Big" Lele');
+	});
+
+	it("Wrapper is able to unescape definition data", async () => {
+		const info:EdNFT.Definition = {
+			info: {
+				name: "The \"Big\" Lele",
+				symbol: "LE\\LE",
+				description: "This \"is\" something\tneeding \\/ escaping",
+				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
+				contentHash: "0x3f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca"
+			}
+		};
+		// when
+		const response = (await hofa.create(info));
+		// then
+		const editions = response.instance;
+		expect(EdNFT.unescape(await editions.name())).to.be.equal("The \"Big\" Lele");
+		expect(EdNFT.unescape(await editions.symbol())).to.be.equal("LE\\LE");
+		expect(EdNFT.unescape(await editions.description())).to.be.equal("This \"is\" something\tneeding \\/ escaping");
 	});
 });

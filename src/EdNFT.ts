@@ -19,6 +19,11 @@ import roles from "./roles.json";
 import { ethers } from "ethers";
 
 export declare namespace EdNFT {
+	interface Allowance {
+		minter: string;
+		amount: number
+	}
+
 	// eslint-disable-next-line no-unused-vars
 	interface Definition {
 		info: {
@@ -36,10 +41,7 @@ export declare namespace EdNFT {
 			holder: string;
 			bps: number
 		}[],
-		allowances?: {
-			minter: string;
-			amount: number
-		}[]
+		allowances?: Allowance[]
 	}
 }
 
@@ -48,10 +50,6 @@ export class EdNFT {
 	private factory: MintableEditionsFactory;
 	public address:string;
 	public roles:{[key: string]: string} = roles;
-
-	public static unwrapDescription(description:string): string {
-		return description.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t").replace(/\\"/g, "\"");
-	}
 
 	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
 		this.signerOrProvider = signerOrProvider;
@@ -84,6 +82,15 @@ export class EdNFT {
 		});
 	}
 
+	public static escape(value:string):string {
+		const stringified = JSON.stringify(value);
+		return stringified.substring(0, stringified.length - 1).substring(1);
+	}
+
+	public static unescape(value:string):string {
+		return JSON.parse("\"" + value + "\"");
+	}
+
 	/**
 	 * Creates a new EdNFT
 	 *
@@ -95,12 +102,12 @@ export class EdNFT {
 			try {
 				const tx = await (await this.factory
 					.create({
-						name: props.info.name,
-						symbol: props.info.symbol,
-						description: props.info.description.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t").replace(/"/g, "\\\""),
-						contentUrl: props.info.contentUrl,
+						name: EdNFT.escape(props.info.name),
+						symbol: EdNFT.escape(props.info.symbol),
+						description: EdNFT.escape(props.info.description),
+						contentUrl: EdNFT.escape(props.info.contentUrl),
 						contentHash: props.info.contentHash,
-						thumbnailUrl: props.info.thumbnailUrl || ""
+						thumbnailUrl: EdNFT.escape(props.info.thumbnailUrl || "")
 					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || []))
 					.wait(confirmations);
 				for (const log of tx.events!) {
@@ -162,6 +169,36 @@ export class EdNFT {
 					}
 				}
 				reject(new Error("Event `Transfer` not found"));
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	/**
+	 * Mints an edition of an EdNFT
+	 *
+	 * @param id the EdNFT identifier
+	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 */
+	public async update(id:BigNumberish, data:BigNumberish|EdNFT.Allowance[], confirmations:number = 1):Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				const edition = (await this.get(id)).instance;
+				if (Array.isArray(data)) {
+					// allowances
+					await (await edition.setApprovedMinters(data as EdNFT.Allowance[])).wait(confirmations);
+					resolve(true);
+				} else {
+					// price
+					const tx = await (await edition.setPrice(data as BigNumberish)).wait(confirmations);
+					for (const log of tx.events!) {
+						if (log.event === "PriceChanged") {
+							resolve(true);
+						}
+					}
+					reject(new Error("Price update failed"));
+				}
 			} catch (err) {
 				reject(err);
 			}
@@ -254,20 +291,6 @@ export class EdNFT {
 	public async instances(): Promise<BigNumber> {
 		return new Promise((resolve) => {
 			resolve(this.factory.instances());
-		});
-	}
-
-	/**
-	 * Retrieves the price of an EdNFT
-	 *
-	 * @param id the EdNFT identifier
-	 */
-	public async fetchPrice(id:BigNumberish): Promise<BigNumber> {
-		return new Promise((resolve) => {
-			this.factory.get(id).then((address) => {
-				const edition = MintableEditions__factory.connect(address, this.signerOrProvider);
-				resolve(edition.price());
-			});
 		});
 	}
 
