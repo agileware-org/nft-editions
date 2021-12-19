@@ -65,6 +65,10 @@ export class EdNFT {
 		}
 	}
 
+	public impl(signerOrProvider?: Signer | Provider):MintableEditionsFactory {
+		return (signerOrProvider ? this.factory.connect(signerOrProvider) : this.factory);
+	}
+
 	/**
 	 * Determines the chain identifier
 	 *
