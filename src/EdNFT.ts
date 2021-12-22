@@ -98,7 +98,7 @@ export class EdNFT {
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
 	 * @param callback a callback function reporting received confirmations
 	 */
-	public async create(props:EdNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:string, address:string, instance:MintableEditions}> {
+	public async create(props:EdNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:BigNumber, address:string, instance:MintableEditions}> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const tx = await this.factory
@@ -119,7 +119,7 @@ export class EdNFT {
 				for (const log of receipt.events!) {
 					if (log.event === "CreatedEditions") {
 						resolve({
-							id: log.args![0] as string,
+							id: log.args![0],
 							address: log.args![4] as string,
 							instance: MintableEditions__factory.connect(log.args![4], this.signerOrProvider)
 						});
