@@ -12,9 +12,6 @@ import "hardhat-packager";
 import "hardhat-gas-reporter";
 dotEnvConfig();
 
-const INFURA_API_KEY = process.env.INFURA_API_KEY;
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
-
 const config: HardhatUserConfig = {
   defaultNetwork: "rinkeby",
   namedAccounts: {
@@ -46,17 +43,22 @@ const config: HardhatUserConfig = {
     }
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      mining: {
+        auto: false,
+        interval: 200
+      }
+    },
     localhost: {},
     rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${INFURA_API_KEY}`,
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY || ""],
     },
     coverage: {
       url: "http://127.0.0.1:8545", // Coverage launches its own ganache-cli client
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       gasPrice: 70000000000, // 70 Gwei
       accounts: [process.env.PRIVATE_KEY || ""],
     }
