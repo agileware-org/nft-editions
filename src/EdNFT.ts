@@ -47,7 +47,7 @@ export declare namespace EdNFT {
 
 export class EdNFT {
 	private signerOrProvider: Signer | Provider;
-	private factory: MintableEditionsFactory;
+	public readonly factory: MintableEditionsFactory;
 	public address:string;
 	public roles:{[key: string]: string} = roles;
 
@@ -63,10 +63,6 @@ export class EdNFT {
 			this.address = factoryAddressOrChainId;
 			this.factory = MintableEditionsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
 		}
-	}
-
-	public impl(signerOrProvider?: Signer | Provider):MintableEditionsFactory {
-		return (signerOrProvider ? this.factory.connect(signerOrProvider) : this.factory);
 	}
 
 	/**
@@ -100,11 +96,12 @@ export class EdNFT {
 	 *
 	 * @param props the properties to assign to the editionable NFT to create
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async create(props:EdNFT.Definition, confirmations:number = 1): Promise<{id:string, address:string, instance:MintableEditions}> {
+	public async create(props:EdNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:string, address:string, instance:MintableEditions}> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await (await this.factory
+				const tx = await this.factory
 					.create({
 						name: EdNFT.escape(props.info.name),
 						symbol: EdNFT.escape(props.info.symbol),
@@ -112,9 +109,14 @@ export class EdNFT {
 						contentUrl: EdNFT.escape(props.info.contentUrl),
 						contentHash: props.info.contentHash,
 						thumbnailUrl: EdNFT.escape(props.info.thumbnailUrl || "")
-					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || []))
-					.wait(confirmations);
-				for (const log of tx.events!) {
+					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || []);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				for (const log of receipt.events!) {
 					if (log.event === "CreatedEditions") {
 						resolve({
 							id: log.args![0] as string,
@@ -134,15 +136,22 @@ export class EdNFT {
 	 *
 	 * @param id the EdNFT identifier
 	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async purchase(id:BigNumberish, confirmations:number = 1): Promise<BigNumber> {
+	public async purchase(id:BigNumberish, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const price = await edition.price();
 				if (price.gt(0)) {
-					const tx = await (await edition.purchase({ value: price })).wait(confirmations);
-					for (const log of tx.events!) {
+					const tx = await edition.purchase({ value: price });
+					let received = tx.confirmations;
+					let receipt = await tx.wait();
+					while (received < confirmations) {
+						if (callback) callback(received, confirmations);
+						receipt = await tx.wait(received++);
+					}
+					for (const log of receipt.events!) {
 						if (log.event === "Transfer") {
 							resolve(log.args![2]);
 						}
@@ -161,13 +170,20 @@ export class EdNFT {
 	 *
 	 * @param id the EdNFT identifier
 	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async mint(id:BigNumberish, confirmations:number = 1):Promise<BigNumber> {
+	public async mint(id:BigNumberish, confirmations:number = 1, callback?:(received:number, requested:number) => void):Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
-				const tx = await (await edition.mint()).wait(confirmations);
-				for (const log of tx.events!) {
+				const tx = await edition.mint();
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				for (const log of receipt.events!) {
 					if (log.event === "Transfer") {
 						resolve(log.args![2]);
 					}
@@ -184,8 +200,9 @@ export class EdNFT {
 	 *
 	 * @param id the EdNFT identifier
 	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async update(id:BigNumberish, data:BigNumberish|EdNFT.Allowance[], confirmations:number = 1):Promise<boolean> {
+	public async update(id:BigNumberish, data:BigNumberish|EdNFT.Allowance[], confirmations:number = 1, callback?:(received:number, requested:number) => void):Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = (await this.get(id)).instance;
@@ -195,8 +212,14 @@ export class EdNFT {
 					resolve(true);
 				} else {
 					// price
-					const tx = await (await edition.setPrice(data as BigNumberish)).wait(confirmations);
-					for (const log of tx.events!) {
+					const tx = await edition.setPrice(data as BigNumberish);
+					let received = tx.confirmations;
+					let receipt = await tx.wait();
+					while (received < confirmations) {
+						if (callback) callback(received, confirmations);
+						receipt = await tx.wait(received++);
+					}
+					for (const log of receipt.events!) {
 						if (log.event === "PriceChanged") {
 							resolve(true);
 						}
@@ -216,8 +239,9 @@ export class EdNFT {
 	 * @param receiver the receiver of the editions
 	 * @param count number of editions to mint
 	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async mintMultiple(id:BigNumberish, receiver: string, count:number, confirmations:number = 1):Promise<BigNumber> {
+	public async mintMultiple(id:BigNumberish, receiver: string, count:number, confirmations:number = 1, callback?:(received:number, requested:number) => void):Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
@@ -225,11 +249,17 @@ export class EdNFT {
 				for (let i = 0; i < count; i++) {
 					addresses.push(receiver);
 				}
-				const tx = await (await edition.mintAndTransfer(addresses)).wait(confirmations);
-				if (tx.events) {
-					for (let i = tx.events.length; i > 0; i++) {
-						if (tx.events[i - 1].event === "Transfer") {
-							resolve(tx.events[i - 1].args![2]);
+				const tx = await edition.mintAndTransfer(addresses);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				if (receipt.events) {
+					for (let i = receipt.events.length; i > 0; i++) {
+						if (receipt.events[i - 1].event === "Transfer") {
+							resolve(receipt.events[i - 1].args![2]);
 						}
 					}
 				}
@@ -247,8 +277,9 @@ export class EdNFT {
 	 * @param recipients list of addresses receiving the editions
 	 * @param count number of instances to mint for each recipient
 	 * @param confirmations number of confirmations to wait for, defaults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async mintAndTransfer(id:BigNumberish, recipients:Array<string>, count:number = 1, confirmations:number = 1):Promise<BigNumber> {
+	public async mintAndTransfer(id:BigNumberish, recipients:Array<string>, count:number = 1, confirmations:number = 1, callback?:(received:number, requested:number) => void):Promise<BigNumber> {
 		const addresses: Array<string> = [];
 		for (const addr of recipients!) {
 			for (let i = 0; i < count; i++) {
@@ -258,11 +289,17 @@ export class EdNFT {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
-				const tx = await (await edition.mintAndTransfer(addresses)).wait(confirmations);
-				if (tx.events) {
-					for (let i = tx.events!.length; i > 0; i--) {
-						if (tx.events[i - 1].event === "Transfer") {
-							resolve(tx.events![i - 1].args![2]);
+				const tx = await edition.mintAndTransfer(addresses);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				if (receipt.events) {
+					for (let i = receipt.events!.length; i > 0; i--) {
+						if (receipt.events[i - 1].event === "Transfer") {
+							resolve(receipt.events![i - 1].args![2]);
 						}
 					}
 				}
@@ -323,9 +360,10 @@ export class EdNFT {
 	 *
 	 * @param address the address to grant
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async grantArtist(address:string, confirmations:number = 1): Promise<boolean> {
-		return this._grantRole(roles.artist, address, confirmations);
+	public async grantArtist(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return this._grantRole(roles.artist, address, confirmations, callback);
 	}
 
 	/**
@@ -333,9 +371,10 @@ export class EdNFT {
 	 *
 	 * @param address the address to revoke
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async revokeArtist(address:string, confirmations:number = 1): Promise<boolean> {
-		return this._revokeRole(roles.artist, address, confirmations);
+	public async revokeArtist(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return this._revokeRole(roles.artist, address, confirmations, callback);
 	}
 
 	/**
@@ -352,9 +391,10 @@ export class EdNFT {
 	 *
 	 * @param address the address to grant
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async grantAdmin(address:string, confirmations:number = 1): Promise<boolean> {
-		return this._grantRole(roles.admin, address, confirmations);
+	public async grantAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return this._grantRole(roles.admin, address, confirmations, callback);
 	}
 
 	/**
@@ -362,9 +402,10 @@ export class EdNFT {
 	 *
 	 * @param address the address to revoke
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	public async revokeAdmin(address:string, confirmations:number = 1): Promise<boolean> {
-		return this._revokeRole(roles.admin, address, confirmations);
+	public async revokeAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return this._revokeRole(roles.admin, address, confirmations, callback);
 	}
 
 	/**
@@ -381,13 +422,19 @@ export class EdNFT {
 	 *
 	 * @param address the address to grant
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	private async _grantRole(role:string, address:string, confirmations:number = 1): Promise<boolean> {
+	private async _grantRole(role:string, address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await (await this.factory.grantRole(role, address))
-					.wait(confirmations);
-				for (const log of tx.events!) {
+				const tx = await this.factory.grantRole(role, address);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				for (const log of receipt.events!) {
 					if (log.event === "RoleGranted") {
 						resolve(true);
 					}
@@ -404,13 +451,19 @@ export class EdNFT {
 	 *
 	 * @param address the address to revoke
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
 	 */
-	private async _revokeRole(role:string, address:string, confirmations:number = 1): Promise<boolean> {
+	private async _revokeRole(role:string, address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await (await this.factory.revokeRole(role, address))
-					.wait(confirmations);
-				for (const log of tx.events!) {
+				const tx = await this.factory.revokeRole(role, address);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				for (const log of receipt.events!) {
 					if (log.event === "RoleRevoked") {
 						resolve(true);
 					}
