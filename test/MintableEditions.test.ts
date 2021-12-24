@@ -66,13 +66,13 @@ describe("MintableEditions", function () {
   });
 
   it("Artist can mint for others", async function () {
-    const recipients = new Array<string>(10);
+    const recipients = new Array<string>(500);
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = receiver.address;
     }
     await expect(editions.mintAndTransfer(recipients))
       .to.emit(editions, "Transfer")
-      .withArgs(ethers.constants.AddressZero, receiver.address, 1);
+      .withArgs(ethers.constants.AddressZero, receiver.address, 500);
     const receiverBalance = await editions.balanceOf(receiver.address);
     await expect(await editions.totalSupply()).to.equal(receiverBalance);
   });
