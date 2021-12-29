@@ -16,22 +16,4 @@ describe("Deployments", function () {
     const MintableEditionsFactory = await ethers.getContractFactory("MintableEditionsFactory");
     await MintableEditionsFactory.deploy(editionsTemplate.address);
   });
-
-  it("Should deploy SplitterFactory contracts", async function () {
-    const PushSplitter = await ethers.getContractFactory("PushSplitter");
-    const pushSplitter = await PushSplitter.deploy();
-
-    const ShakeableSplitter = await ethers.getContractFactory("ShakeableSplitter");
-    const shakeableSplitter = await ShakeableSplitter.deploy();
-
-    const SplitterFactory = await ethers.getContractFactory("SplitterFactory");
-    const factory = await SplitterFactory.deploy();
-
-    const [deployer] = await ethers.getSigners();
-    const instance = SplitterFactory__factory.connect(factory.address, deployer) as SplitterFactory;
-    const push = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("push"));
-    const shake = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("shake"));
-    instance.addSplitterType(push, pushSplitter.address);
-    instance.addSplitterType(shake, shakeableSplitter.address);
-  });
 });
